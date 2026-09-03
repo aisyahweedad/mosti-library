@@ -14,6 +14,7 @@ import {
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
+  Download,
   Files,
   MoreHorizontal,
   Plus,
@@ -42,7 +43,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { BOOK_KINDS, BOOK_STATUSES, type Book, type BookStatus } from "@/lib/books-data";
+import {
+  BOOK_KINDS,
+  BOOK_STATUSES,
+  type Book,
+  type BookStatus,
+} from "@/lib/book-types";
 import { cn } from "@/lib/utils";
 
 const STATUS_VARIANT: Record<
@@ -100,6 +106,14 @@ function RowActions({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
+        {book.objectKey && (
+          <DropdownMenuItem asChild>
+            <a href={`/api/admin/books/${book.id}/file`} target="_blank" rel="noreferrer">
+              <Download className="mr-2 h-4 w-4" />
+              Muat turun PDF
+            </a>
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem
           className="text-destructive focus:text-destructive"
           onClick={() => onRemove(book)}

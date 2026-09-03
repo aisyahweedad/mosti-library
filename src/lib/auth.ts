@@ -8,15 +8,6 @@ export type SessionUser = {
   role: "Pentadbir" | "Pengguna Berdaftar";
 };
 
-const MOCK_USERS = [
-  {
-    email: "admin@arkib.gov.my",
-    password: "arkib2024",
-    name: "Nurul Aina binti Ahmad",
-    role: "Pentadbir" as const,
-  },
-];
-
 function secretKey(): Uint8Array {
   return new TextEncoder().encode(
     process.env.JWT_SECRET ?? "dev-secret-arkib-change-in-production"
@@ -39,19 +30,6 @@ export async function verifySession(token: string | null | undefined): Promise<S
   } catch {
     return null;
   }
-}
-
-export function authenticate(
-  email: string,
-  password: string
-): SessionUser | null {
-  const user = MOCK_USERS.find(
-    (u) =>
-      u.email.toLowerCase() === email.trim().toLowerCase() &&
-      u.password === password
-  );
-  if (!user) return null;
-  return { email: user.email, name: user.name, role: user.role };
 }
 
 export function cookieOptions(maxAge: number) {

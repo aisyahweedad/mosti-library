@@ -100,13 +100,19 @@ export function UploadBookForm() {
     );
 
     try {
+      const form = new FormData();
+      form.append("file", file);
+      form.append("title", values.title);
+      form.append("author", values.author);
+      form.append("year", String(values.year));
+      form.append("kind", values.kind);
+      form.append("category", values.category);
+      form.append("language", values.language);
+      form.append("pages", String(values.pages));
+
       const res = await fetch("/api/admin/books", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...values,
-          sizeMB: Math.max(0.1, file.size / 1024 / 1024),
-        }),
+        body: form,
       });
       const data = await res.json();
       clearInterval(timer);

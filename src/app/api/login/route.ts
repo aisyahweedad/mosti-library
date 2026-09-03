@@ -1,11 +1,7 @@
 import { NextResponse } from "next/server";
 
-import {
-  SESSION_COOKIE,
-  authenticate,
-  cookieOptions,
-  createSession,
-} from "@/lib/auth";
+import { SESSION_COOKIE, cookieOptions, createSession } from "@/lib/auth";
+import { authenticate } from "@/lib/authenticate";
 
 export async function POST(request: Request) {
   let body: { email?: string; password?: string };

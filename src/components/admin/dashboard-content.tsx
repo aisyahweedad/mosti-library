@@ -30,8 +30,8 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MONTHLY_UPLOADS } from "@/lib/books-data";
-import type { BookStatus } from "@/lib/books-data";
+import { MONTHLY_UPLOADS } from "@/lib/book-types";
+import type { BookStatus } from "@/lib/book-types";
 
 const STATUS_COLORS: Record<BookStatus, string> = {
   Siap: "#16a34a",
