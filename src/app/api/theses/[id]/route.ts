@@ -7,8 +7,7 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const id = Number(params.id);
-  const thesis = Number.isInteger(id) ? getThesis(id) : undefined;
+  const thesis = getThesis(params.id);
   if (!thesis) {
     return NextResponse.json({ error: "Tesis tidak dijumpai" }, { status: 404 });
   }

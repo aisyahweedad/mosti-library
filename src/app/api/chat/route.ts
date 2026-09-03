@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { getThesis } from "@/lib/search";
-import type { Thesis } from "@/lib/types";
+import { streamChatCompletion, embedTexts, llmConfigured, type ChatMessage } from "@/lib/ai";
+import { getBook } from "@/lib/books-data";
+import { searchChunks } from "@/lib/vectors";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 type ChatRequestBody = {
   messages: { role: "user" | "assistant"; content: string }[];
-  thesis?: { id?: number } | Thesis;
+  thesis?: { id?: string };
 };
 
 const encoder = new TextEncoder();
@@ -17,103 +18,124 @@ function sse(parts: string[]): Uint8Array {
   return encoder.encode(parts.join("\n") + "\n");
 }
 
-const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
-/**
- * Mock of a RAG answer synthesised from the thesis record.
- * Swap this function for a real provider (e.g. `streamText` with
- * @ai-sdk/anthropic + vector retrieval) when the backend exists —
- * the streaming contract to the client stays the same.
- */
-function buildAnswer(question: string, t: Thesis): string {
-  const q = question.toLowerCase();
-  const has = (...words: string[]) => words.some((w) => q.includes(w));
-
-  const sentences: string[] = [];
-
-  if (has("kaedah", "metodologi", "method", "bagaimana kajian", "reka bentuk")) {
-    sentences.push(
-      `Daripada abstrak dokumen ini, kajian ${t.title} menggunakan pendekatan yang dijelaskan dalam ringkasan berikut: ${t.abstract}`
-    );
-  } else if (has("dapatan", "hasil", "keputusan", "finding", "conclusion", "kesimpulan")) {
-    sentences.push(`Berdasarkan dapatan awal yang diringkaskan: ${t.abstract}`);
-  } else if (has("fakulti", "faculty", "bidang", "jabatan")) {
-    sentences.push(
-      `Tesis ini diklasifikasikan di bawah fakulti ${t.faculty}, selaras dengan kata kunci: ${t.keywords.join(", ")}.`
-    );
-  } else if (has("siapa", "siapakah", "pengarang", "author", "tahun", "bila", "where")) {
-    sentences.push(
-      `Rekod ini disediakan oleh ${t.author} (${t.university}, ${t.year}), di bawah nombor panggilan ${t.call}.`
-    );
-  } else {
-    sentences.push(
-      `Berdasarkan tesis "${t.title}" (${t.author}, ${t.university}, ${t.year}): ${t.abstract}`
-    );
+function emit(controller: ReadableStreamDefaultController<Uint8Array>, parts: string[]) {
+  try {
+    controller.enqueue(sse(parts));
+  } catch {
+    // stream was aborted by the client
   }
-
-  sentences.push(
-    `Kata kunci yang diekstrak: ${t.keywords.join(", ")}.`,
-    "Perincian lanjut, termasuk metodologi penuh dan dapatan per bab, akan dapat disediakan sebaik pemprosesan teks penuh dokumen diaktifkan."
-  );
-
-  return sentences.join("\n\n");
 }
 
+function done(controller: ReadableStreamDefaultController<Uint8Array>, finishReason: string, error = "") {
+  emit(controller, [
+    `d:${JSON.stringify({
+      finishReason,
+      usage: { promptTokens: 0, completionTokens: 0 },
+      error: error || undefined,
+    })}`,
+  ]);
+}
+
+const MAX_HISTORY = 8;
+
 export async function POST(req: NextRequest) {
-  const body = (await req.json()) as ChatRequestBody;
-  const lastUserMessage = [...(body.messages ?? [])]
-    .reverse()
-    .find((m) => m.role === "user");
+  const body = (await req.json().catch(() => null)) as ChatRequestBody | null;
+  const messages = Array.isArray(body?.messages) ? body.messages : [];
+  const thesisId =
+    body?.thesis && typeof body.thesis.id === "string" ? body.thesis.id : "";
 
-  let thesis: Thesis | undefined;
-  if (body.thesis && "id" in body.thesis && body.thesis.id) {
-    thesis = getThesis(body.thesis.id);
-  }
-
-  if (!thesis) {
+  const book = thesisId ? getBook(thesisId) : undefined;
+  if (!book) {
     return NextResponse.json(
-      { error: "Maklumat tesis diperlukan untuk menjawab soalan." },
-      { status: 400 }
+      { error: "Dokumen tidak dijumpai." },
+      { status: 404 }
     );
   }
 
-  const answer = buildAnswer(lastUserMessage?.content ?? "", thesis);
-  const words = answer.split(/(\s+)/);
-  const totalWords = words.filter((w) => w.trim()).length;
+  const lastUser = [...messages].reverse().find((m) => m.role === "user");
+
+  let aborted = false;
 
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       try {
-        let idx = 0;
-        while (idx < words.length) {
-          // emit 2 chunks every ~30ms for a natural "typing" rhythm
-          const take = Math.min(words.length - idx, idx % 6 === 0 ? 4 : 2);
-          const chunk = sse(
-            words.slice(idx, idx + take).map(
-              (w) => `0:${JSON.stringify(w)}`
-            )
-          );
-          controller.enqueue(chunk);
-          idx += take;
-          await delay(28);
+        if (!lastUser?.content.trim()) {
+          emit(controller, [`0:${JSON.stringify("Sila tanya sesuatu tentang dokumen ini.")}`]);
+          done(controller, "stop");
+          controller.close();
+          return;
         }
-        controller.enqueue(
-          sse([
-            `d:${JSON.stringify({
-              finishReason: "stop",
-              usage: { promptTokens: 120, completionTokens: totalWords },
-            })}`,
-          ])
-        );
+
+        if (book.status !== "Siap" || !llmConfigured()) {
+          const note =
+            book.status !== "Siap"
+              ? `Dokumen ini masih berstatus "${book.status}". Soalan kandungan boleh dijawab sebaik sahaja pemprosesan indeks selesai.`
+              : "Saluran jawapan AI belum dikonfigurasi (semak pemboleh ubah persekitaran LLM).";
+          emit(controller, [`0:${JSON.stringify(note)}`]);
+          done(controller, "stop");
+          controller.close();
+          return;
+        }
+
+        const [queryEmbedding] = await embedTexts([lastUser.content]);
+        const hits = searchChunks(book.id, queryEmbedding, 6);
+
+        const modelMessages: ChatMessage[] = [
+          {
+            role: "system",
+            content:
+              `Anda adalah pembantu penyelidikan untuk dokumen arkib "${book.title}" ` +
+              `oleh ${book.author} (${book.year}), nombor panggilan ${book.call}. ` +
+              "Balas dalam Bahasa Melayu. Jawab hanya berdasarkan KONTEKS yang diberikan; " +
+              "sebut nombor halaman seperti (hlm. 12) apabila merujuk kepadanya. " +
+              "Jika maklumat itu tiada dalam KONTEKS, nyatakan \"Maklumat ini tidak terdapat dalam dokumen.\" " +
+              "Jangan mencipta fakta atau meneka.",
+          },
+          hits.length > 0
+            ? {
+                role: "user" as const,
+                content:
+                  "KONTEKS DOKUMEN (petikan berindeks beserta halaman):\n" +
+                  hits
+                    .map((h) => `[hlm. ${h.page ?? "?"}]\n${h.text}`)
+                    .join("\n\n---\n\n") +
+                  `\n\nSoalan saya:\n${lastUser.content}`,
+              }
+            : {
+                role: "user" as const,
+                content:
+                  "KONTEKS DOKUMEN: (tiada petikan berindeks tersedia untuk soalan ini).\n" +
+                  "Jawab berdasarkan metadata dokumen yang anda tahu sahaja, atau nyatakan bahawa maklumat tidak terdapat dalam dokumen.\n\n" +
+                  `Soalan saya:\n${lastUser.content}`,
+              },
+          ...messages.slice(-MAX_HISTORY).map((m) => ({
+            role: m.role === "assistant" ? "assistant" as const : "user" as const,
+            content: m.content,
+          })),
+        ];
+
+        for await (const delta of streamChatCompletion(modelMessages, {
+          temperature: 0.4,
+        })) {
+          if (aborted) return;
+          emit(controller, [`0:${JSON.stringify(delta)}`]);
+        }
+        if (aborted) return;
+        done(controller, "stop");
         controller.close();
       } catch (err) {
-        controller.enqueue(
-          sse([`d:${JSON.stringify({ finishReason: "error", error: String(err) })}`])
-        );
+        console.error("[/api/chat] RAG error:", err);
+        if (aborted) return;
+        emit(controller, [
+          `0:${JSON.stringify("Maaf, berlaku ralat semasa menjana jawapan. Sila cuba lagi.")}`,
+        ]);
+        done(controller, "error", String(err));
         controller.close();
       }
     },
-    cancel() {},
+    cancel() {
+      aborted = true;
+    },
   });
 
   return new Response(stream, {

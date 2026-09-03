@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { sessionFromRequest } from "@/lib/auth";
 import { BOOK_KINDS, addBook, listBooks, removeBook } from "@/lib/books-data";
 import { getDb } from "@/lib/db";
+import { ingestBook } from "@/lib/ingest";
 import { putObject } from "@/lib/object-store";
 export async function GET(request: Request) {
   if (!(await sessionFromRequest(request.headers))) {
@@ -152,6 +153,9 @@ export async function POST(request: Request) {
     getDb()
       .prepare("UPDATE books SET object_key = ? WHERE id = ?")
       .run(objectKey, book.id);
+
+    // kick off real ingestion (extract → chunk → embed → summary)
+    void ingestBook(book.id);
   }
 
   return NextResponse.json({ ok: true, book }, { status: 201 });

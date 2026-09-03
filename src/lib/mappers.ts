@@ -1,6 +1,31 @@
-import type { Thesis } from "@/lib/types";
+import type { Book } from "@/lib/book-types";
+import type { Thesis, ThesisSummary } from "@/lib/types";
 
-export function toSummary(t: Thesis) {
+export function bookToSummary(b: Book): ThesisSummary {
+  return {
+    id: b.id,
+    call: b.call,
+    faculty: b.category,
+    title: b.title,
+    author: b.author,
+    university: "",
+    year: b.year,
+    pages: b.pages,
+    ocrAccuracy: "",
+    keywords: b.keywords,
+  };
+}
+
+export function bookToFull(b: Book): Thesis {
+  return {
+    ...bookToSummary(b),
+    degree: "",
+    ocrPages: 0,
+    abstract: b.abstract,
+  };
+}
+
+export function toSummary(t: Thesis): ThesisSummary {
   return {
     id: t.id,
     call: t.call,
@@ -15,7 +40,7 @@ export function toSummary(t: Thesis) {
   };
 }
 
-export function toFull(t: Thesis) {
+export function toFull(t: Thesis): Thesis {
   return {
     ...toSummary(t),
     degree: t.degree,

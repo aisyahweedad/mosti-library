@@ -31,6 +31,8 @@ export type Book = {
   uploadedAt: string;
   collatedBy: string;
   objectKey: string | null;
+  abstract: string;
+  keywords: string[];
 };
 
 export type NewBookInput = {

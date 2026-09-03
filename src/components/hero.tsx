@@ -4,23 +4,11 @@ import { SearchCommand } from "@/components/search-command";
 import { StatsBar } from "@/components/stats-bar";
 import { Badge } from "@/components/ui/badge";
 import { AIShowcase } from "@/components/ai-showcase";
-
-const CARDS = [
-  {
-    call: "SH/2020/0056",
-    title: "Kajian Etnobotani Tumbuhan Ubatan Tradisional Masyarakat Orang Asli di Pahang",
-    meta: "Universiti Malaya · 2020",
-    rotate: "-rotate-2",
-  },
-  {
-    call: "SK/2023/0304",
-    title: "Pembangunan Sistem Pengesanan Penyakit Daun Padi Menggunakan Rangkaian Neural Konvolusi",
-    meta: "Universiti Putra Malaysia · 2023",
-    rotate: "rotate-1",
-  },
-];
+import { searchTheses } from "@/lib/search";
 
 export function Hero() {
+  const { items } = searchTheses({ page: 1, pageSize: 2 });
+
   return (
     <section className="relative overflow-hidden">
       {/* soft backdrop */}
@@ -60,28 +48,34 @@ export function Hero() {
         </div>
 
         {/* decorative catalogue cards */}
-        <div className="relative hidden h-[380px] lg:block">
-          {CARDS.map((c, i) => (
-            <div
-              key={c.call}
-              className={`absolute left-1/2 top-6 w-[86%] -translate-x-1/2 ${c.rotate}`}
-              style={{ top: `${i * 92}px`, zIndex: CARDS.length - i }}
-            >
-              <div className="flex flex-col gap-2 rounded-2xl border border-border bg-card p-6 shadow-xl shadow-black/5">
-                <span className="font-mono text-[11px] uppercase tracking-wider text-primary">
-                  {c.call}
-                </span>
-                <h3 className="font-display text-lg font-semibold leading-snug">
-                  {c.title}
-                </h3>
-                <span className="text-xs text-muted-foreground">{c.meta}</span>
+        {items.length > 0 && (
+          <div className="relative hidden h-[380px] lg:block">
+            {items.map((c, i) => (
+              <div
+                key={c.id}
+                className={`absolute left-1/2 top-6 w-[86%] -translate-x-1/2 ${
+                  i === 0 ? "-rotate-2" : "rotate-1"
+                }`}
+                style={{ top: `${i * 92}px`, zIndex: items.length - i }}
+              >
+                <div className="flex flex-col gap-2 rounded-2xl border border-border bg-card p-6 shadow-xl shadow-black/5">
+                  <span className="font-mono text-[11px] uppercase tracking-wider text-primary">
+                    {c.call}
+                  </span>
+                  <h3 className="line-clamp-3 font-display text-lg font-semibold leading-snug">
+                    {c.title}
+                  </h3>
+                  <span className="text-xs text-muted-foreground">
+                    {c.author} · {c.year}
+                  </span>
+                </div>
               </div>
-            </div>
-          ))}
-          <p className="absolute bottom-2 left-1/2 w-full -translate-x-1/2 text-center text-xs text-muted-foreground">
-            Ringkasan, kata kunci &amp; jawapan dijana AI daripada teks OCR.
-          </p>
-        </div>
+            ))}
+            <p className="absolute bottom-2 left-1/2 w-full -translate-x-1/2 text-center text-xs text-muted-foreground">
+              Ringkasan, kata kunci &amp; jawapan dijana AI daripada teks OCR.
+            </p>
+          </div>
+        )}
       </div>
 
       <AIShowcase />

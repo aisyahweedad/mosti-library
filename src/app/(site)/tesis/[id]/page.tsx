@@ -13,38 +13,37 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { getRelatedTheses, getThesis } from "@/lib/search";
-import { THESES } from "@/lib/theses-data";
 
-export const dynamicParams = false;
-
-export function generateStaticParams() {
-  return THESES.map((t) => ({ id: String(t.id) }));
-}
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
 }: {
   params: { id: string };
 }): Promise<Metadata> {
-  const t = getThesis(Number(params.id));
-  if (!t) return { title: "Tesis tidak dijumpai" };
+  const t = getThesis(params.id);
+  if (!t) return { title: "Dokumen tidak dijumpai" };
   return {
     title: `${t.title} · ARKIB`,
-    description: `${t.abstract.slice(0, 160)}…`,
+    description: t.abstract ? `${t.abstract.slice(0, 160)}…` : `${t.author} (${t.year}).`,
     openGraph: {
       title: t.title,
-      description: t.abstract,
+      description: t.abstract || undefined,
       type: "article",
     },
   };
 }
 
 export default function ThesisPage({ params }: { params: { id: string } }) {
-  const thesis = getThesis(Number(params.id));
+  const thesis = getThesis(params.id);
   if (!thesis) notFound();
 
   const related = getRelatedTheses(thesis);
-  const indexedPages = `${thesis.ocrPages}/${thesis.pages}`;
+  const indexed = thesis.ocrPages > 0 ? `${thesis.ocrPages}/${thesis.pages}` : "Belum diindeks";
+  const affiliation = [
+    thesis.university,
+    thesis.degree,
+  ].filter(Boolean).join(" · ");
 
   return (
     <main className="container scroll-mt-24 py-10">
@@ -63,7 +62,7 @@ export default function ThesisPage({ params }: { params: { id: string } }) {
         <Badge variant="secondary">{thesis.faculty}</Badge>
         <Badge variant="success">
           <ScanLine className="h-3 w-3" />
-          OCR {thesis.ocrAccuracy}
+          {thesis.abstract ? "Indeks teks penuh" : "Indeks belum tersedia"}
         </Badge>
       </div>
 
@@ -71,20 +70,24 @@ export default function ThesisPage({ params }: { params: { id: string } }) {
         {thesis.title}
       </h1>
 
-      <p className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-muted-foreground">
-        <span className="font-medium text-foreground">{thesis.author}</span>
-        <span>·</span>
-        <span>{thesis.university}</span>
-        <span>·</span>
-        <span>{thesis.degree}</span>
-      </p>
+      {thesis.author && (
+        <p className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-muted-foreground">
+          <span className="font-medium text-foreground">{thesis.author}</span>
+          {affiliation && (
+            <>
+              <span>·</span>
+              <span>{affiliation}</span>
+            </>
+          )}
+        </p>
+      )}
 
       <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm text-muted-foreground">
         <span>Tahun {thesis.year}</span>
-        <span>{thesis.pages} halaman</span>
+        {thesis.pages > 0 && <span>{thesis.pages} halaman</span>}
         <span className="flex items-center gap-1">
           <GraduationCap className="h-3.5 w-3.5" />
-          {indexedPages} muka surat di-OCR
+          {indexed} halaman diindeks
         </span>
       </div>
 
@@ -99,26 +102,41 @@ export default function ThesisPage({ params }: { params: { id: string } }) {
             <TabsContent value="ringkasan" className="mt-5">
               <div className="rounded-2xl border border-border bg-card p-6">
                 <div className="rounded-xl border-l-4 border-primary bg-muted/40 p-5">
-                  <p className="text-sm leading-relaxed text-foreground/90">
-                    {thesis.abstract}
-                  </p>
+                  {thesis.abstract ? (
+                    <p className="text-sm leading-relaxed text-foreground/90">
+                      {thesis.abstract}
+                    </p>
+                  ) : (
+                    <p className="text-sm leading-relaxed text-foreground/90">
+                      Ringkasan AI belum tersedia kerana dokumen ini masih dalam
+                      pemprosesan indeks. Ringkasan akan dijana automatik sebaik
+                      sahaja saluran pemprosesan selesai.
+                    </p>
+                  )}
                 </div>
 
                 <h3 className="mt-6 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Kata kunci diekstrak AI
                 </h3>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {thesis.keywords.map((k) => (
-                    <Badge key={k} variant="outline" className="font-normal">
-                      {k}
-                    </Badge>
-                  ))}
-                </div>
+                {thesis.keywords.length > 0 ? (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {thesis.keywords.map((k) => (
+                      <Badge key={k} variant="outline" className="font-normal">
+                        {k}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    Tiada kata kunci lagi — pengesktrakan diaktifkan bersama
+                    pemprosesan indeks dokumen.
+                  </p>
+                )}
 
                 <p className="mt-6 text-xs leading-relaxed text-muted-foreground">
-                  Ringkasan ini dijana berdasarkan teks penuh yang diproses OCR.
-                  Untuk soalan spesifik, gunakan panel Tanya AI — jawapan
-                  dijana terus daripada kandungan dokumen ini.
+                  Jawapan AI dijana daripada kandungan teks penuh dokumen yang
+                  diindeks (carian vektor), dan merujuk nombor halaman seperti
+                  (hlm. 12).
                 </p>
               </div>
             </TabsContent>
@@ -129,11 +147,11 @@ export default function ThesisPage({ params }: { params: { id: string } }) {
                   ["Nombor panggilan", thesis.call],
                   ["Fakulti", thesis.faculty],
                   ["Pengarang", thesis.author],
-                  ["Universiti", thesis.university],
+                  ["Universiti", thesis.university || "—"],
                   ["Tahun", String(thesis.year)],
-                  ["Ijazah", thesis.degree],
-                  ["Halaman", `${thesis.pages} (${indexedPages} di-OCR)`],
-                  ["Ketepatan OCR", thesis.ocrAccuracy],
+                  ["Ijazah", thesis.degree || "—"],
+                  ["Halaman", `${thesis.pages} (${indexed})`],
+                  ["Indeks kandungan", thesis.abstract ? "Siap" : "Belum"],
                 ].map(([label, value]) => (
                   <div key={label} className="bg-card p-4">
                     <dt className="text-xs text-muted-foreground">{label}</dt>

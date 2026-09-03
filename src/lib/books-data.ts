@@ -34,9 +34,22 @@ type BookRow = {
   status: BookStatus;
   progress: number;
   object_key: string | null;
+  abstract: string;
+  keywords: string;
   uploaded_at: string;
   collated_by: string;
 };
+
+function parseKeywords(raw: string | null): string[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed.map(String);
+  } catch {
+    // fall through to comma-splitting below
+  }
+  return raw.split(",").map((s) => s.trim()).filter(Boolean);
+}
 
 function rowToBook(row: BookRow): Book {
   return {
@@ -55,6 +68,8 @@ function rowToBook(row: BookRow): Book {
     uploadedAt: row.uploaded_at,
     collatedBy: row.collated_by,
     objectKey: row.object_key,
+    abstract: row.abstract ?? "",
+    keywords: parseKeywords(row.keywords ?? "[]"),
   };
 }
 
@@ -62,43 +77,29 @@ function pad(n: number) {
   return String(n).padStart(4, "0");
 }
 
-const activeTimers = new Map<string, NodeJS.Timeout>();
-
-function scheduleTick(id: string, delay: number) {
-  const timer = setTimeout(() => tickProgress(id), delay);
-  activeTimers.set(id, timer);
+export function updateBookProcessing(
+  id: string,
+  status: BookStatus,
+  progress: number
+) {
+  getDb()
+    .prepare("UPDATE books SET status = ?, progress = ? WHERE id = ?")
+    .run(status, progress, id);
 }
 
-function tickProgress(id: string) {
-  activeTimers.delete(id);
-  const db = getDb();
-  const row = db
-    .prepare("SELECT * FROM books WHERE id = ?")
-    .get(id) as unknown as BookRow | undefined;
-  if (!row || row.status === "Gagal") return;
-  if (row.status !== "Menunggu" && row.status === "Siap") return;
-
-  const next = Math.min(100, row.progress + 11 + Math.round(Math.random() * 14));
-  const status: BookStatus = next >= 100 ? "Siap" : "Sedang Diproses";
-  db.prepare("UPDATE books SET status = ?, progress = ? WHERE id = ?").run(
-    status,
-    next,
-    id
-  );
-  if (next < 100) scheduleTick(id, 900);
+export function markBookReady(id: string, abstract: string, keywords: string[]) {
+  getDb()
+    .prepare(
+      "UPDATE books SET status = 'Siap', progress = 100, abstract = ?, keywords = ? WHERE id = ?"
+    )
+    .run(abstract, JSON.stringify(keywords), id);
 }
 
-export function resumePendingLifecycles() {
-  const db = getDb();
-  const pending = db
-    .prepare("SELECT id, status FROM books WHERE status IN ('Menunggu', 'Sedang Diproses')")
-    .all() as unknown as Array<{ id: string; status: BookStatus }>;
-  for (const { id, status } of pending) {
-    if (!activeTimers.has(id) && status !== "Siap") scheduleTick(id, 500);
-  }
+export function markBookFailed(id: string) {
+  getDb()
+    .prepare("UPDATE books SET status = 'Gagal', progress = 100 WHERE id = ?")
+    .run(id);
 }
-
-resumePendingLifecycles();
 
 export function listBooks(): Book[] {
   const db = getDb();
@@ -152,7 +153,6 @@ export function addBook(
   );
 
   const book = getBook(id)!;
-  scheduleTick(id, 700);
   return book;
 }
 
@@ -162,10 +162,10 @@ export function removeBook(id: string): Book | null {
     .prepare("SELECT * FROM books WHERE id = ?")
     .get(id) as unknown as BookRow | undefined;
   if (!row) return null;
-  const timer = activeTimers.get(id);
-  if (timer) clearTimeout(timer);
-  activeTimers.delete(id);
+  db.exec("BEGIN");
+  db.prepare("DELETE FROM chunks WHERE book_id = ?").run(id);
   db.prepare("DELETE FROM books WHERE id = ?").run(id);
+  db.exec("COMMIT");
   return rowToBook(row);
 }
 

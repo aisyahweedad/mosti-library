@@ -141,3 +141,24 @@ export function localFileStream(key: string) {
 export function hasLocalObject(key: string) {
   return existsSync(localPath(key));
 }
+
+export async function readObject(key: string): Promise<Buffer> {
+  if (!isS3Configured()) {
+    return await import("node:fs/promises").then((f) =>
+      f.readFile(localPath(key))
+    );
+  }
+  const [{ GetObjectCommand }, client] = [await import("@aws-sdk/client-s3"), await s3Client()];
+  const result = await client.send(
+    new GetObjectCommand({ Bucket: BUCKET, Key: key })
+  );
+  const body = result.Body;
+  if (!body) throw new Error(`Objek kosong: ${key}`);
+  if (typeof body === "string") return Buffer.from(body);
+  if (body instanceof Uint8Array) return Buffer.from(body);
+  const chunks: Buffer[] = [];
+  for await (const chunk of body as AsyncIterable<Uint8Array>) {
+    chunks.push(Buffer.from(chunk));
+  }
+  return Buffer.concat(chunks);
+}

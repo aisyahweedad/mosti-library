@@ -1,5 +1,5 @@
 export type Thesis = {
-  id: number;
+  id: string;
   call: string;
   faculty: string;
   title: string;
@@ -27,15 +27,6 @@ export type ThesisSummary = Pick<
   | "ocrAccuracy"
   | "keywords"
 >;
-
-export type Faculty =
-  | "Pendidikan"
-  | "Kejuruteraan"
-  | "Sains Sosial"
-  | "Sains Komputer"
-  | "Sains Hayat"
-  | "Ekonomi & Pengurusan"
-  | "Perubatan";
 
 export type SearchResult<T> = {
   items: T[];

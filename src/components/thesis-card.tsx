@@ -29,7 +29,8 @@ export function ThesisCard({
       </h3>
 
       <p className="mt-2 text-sm text-muted-foreground">
-        {thesis.author} · {thesis.university}
+        {thesis.author}
+        {thesis.university ? ` · ${thesis.university}` : ""}
       </p>
 
       <div className="mt-auto flex items-center justify-between gap-2 pt-5">

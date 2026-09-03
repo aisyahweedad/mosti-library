@@ -34,11 +34,6 @@ export function SearchCommand() {
     return () => document.removeEventListener("keydown", down);
   }, []);
 
-  const runExample = (term: string) => {
-    setValue(term);
-    setOpen(true);
-  };
-
   return (
     <>
       <button
@@ -53,19 +48,6 @@ export function SearchCommand() {
           ⌘ K
         </kbd>
       </button>
-
-      <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-        <span>Cuba:</span>
-        {["gentian kenaf", "kebimbangan pra-pembedahan", "Zulkifli"].map((t) => (
-          <button
-            key={t}
-            onClick={() => runExample(t)}
-            className="rounded-full border border-border bg-secondary/50 px-3 py-1 text-xs font-medium text-foreground/80 transition-colors hover:border-primary/40 hover:bg-accent"
-          >
-            {t}
-          </button>
-        ))}
-      </div>
 
       <SearchDialog
         open={open}
@@ -92,9 +74,10 @@ function SearchDialog({
   setOpen: (o: boolean) => void;
   value: string;
   setValue: (v: string) => void;
-  onSelect: (id: number) => void;
+  onSelect: (id: string) => void;
 }) {
-  const query = useDebounced(value.trim(), 250);  const enabled = query.length >= 1;
+  const query = useDebounced(value.trim(), 250);
+  const enabled = query.length >= 1;
 
   const { data, isFetching } = useQuery({
     queryKey: ["instant-search", query, enabled],
@@ -116,27 +99,11 @@ function SearchDialog({
       <CommandInput
         value={value}
         onValueChange={setValue}
-        placeholder="Cari tajuk, pengarang, universiti atau kata kunci…"
+        placeholder="Cari tajuk, pengarang atau kata kunci…"
         autoFocus
       />
 
       <CommandList>
-        {!enabled && (
-          <CommandGroup heading="Pencarian popular">
-            <div className="flex flex-wrap gap-2 px-2 py-3">
-              {["etnobotani", "komposit", "blockchain", "diabetes"].map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setValue(t)}
-                  className="rounded-full border border-border px-3 py-1 text-xs font-medium hover:bg-accent"
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
-          </CommandGroup>
-        )}
-
         {enabled && isFetching && !results.length && (
           <div className="flex flex-col gap-2 p-3">
             {[0, 1, 2].map((i) => (

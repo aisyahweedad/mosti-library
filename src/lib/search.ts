@@ -1,19 +1,22 @@
-import type { Faculty, SearchResult, Thesis } from "@/lib/types";
-import { STATS, THESES } from "@/lib/theses-data";
+import { getBook, listBooks } from "@/lib/books-data";
+import { bookToFull, toSummary } from "@/lib/mappers";
+import type { SearchResult, Thesis, ThesisSummary } from "@/lib/types";
+import { countIndexedPages } from "@/lib/vectors";
 
 /**
  * Declarative query object used by the search abstraction.
  *
- * The mock implementation below filters the in-memory catalogue.
- * Swap this file's internals for a Meilisearch client (self-hosted)
- * without touching the route handlers or UI — the signature stays:
+ * The implementation searches the real catalogue stored in SQLite
+ * (`books` table) — only records that finished processing (status "Siap")
+ * are made public. Swap the internals for a Meilisearch client when
+ * the index exists — the signature stays:
  *
  *   searchTheses({ query, faculty, page, pageSize })
  */
 
 export type ThesisQuery = {
   query?: string;
-  faculty?: Faculty | "Semua";
+  faculty?: string;
   page?: number;
   pageSize?: number;
 };
@@ -52,6 +55,10 @@ function tokenize(s: string): string[] {
   return normalizeText(s).split(/\s+/).filter(Boolean);
 }
 
+function publicBooks() {
+  return listBooks().filter((b) => b.status === "Siap").map(bookToFull);
+}
+
 /**
  * Scores a thesis against a query. Returns null when it does not match.
  * Mirrors Meilisearch's typo-tolerance behaviour with a small tolerance
@@ -59,7 +66,9 @@ function tokenize(s: string): string[] {
  */
 function scoreThesis(t: Thesis, query: string): number {
   const haystack = tokenize(
-    [t.title, t.author, t.abstract, t.university, t.keywords.join(" ")].join(" ")
+    [t.title, t.author, t.call, t.faculty, t.keywords.join(" "), t.abstract].join(
+      " "
+    )
   );
   const qTokens = tokenize(query);
   if (qTokens.length === 0) return 1;
@@ -92,49 +101,65 @@ export function searchTheses({
   faculty,
   page = 1,
   pageSize = 12,
-}: ThesisQuery = {}): SearchResult<Thesis> {
+}: ThesisQuery = {}): SearchResult<ThesisSummary> {
   const query = rawQuery?.trim() ?? "";
 
-  const ranked = THESES.map((t) => {
-    const score = scoreThesis(t, query);
-    return { t, score };
-  })
+  const ranked = publicBooks()
+    .map((t) => {
+      const score = scoreThesis(t, query);
+      return { t, score };
+    })
     .filter(({ score }) => score > 0)
     .filter(
       ({ t }) => faculty === undefined || faculty === "Semua" || t.faculty === faculty
     )
-    .sort((a, b) => b.score - a.score || b.t.year - a.t.year)
+    .sort(
+      (a, b) => b.score - a.score || b.t.year - a.t.year || a.t.title.localeCompare(b.t.title)
+    )
     .map(({ t }) => t);
 
   const start = (page - 1) * pageSize;
   return {
-    items: ranked.slice(start, start + pageSize),
+    items: ranked.slice(start, start + pageSize).map(toSummary),
     total: ranked.length,
     page,
     pageSize,
   };
 }
 
-export function getThesis(id: number): Thesis | undefined {
-  return THESES.find((t) => t.id === id);
-}
-
-export function getThesisByCall(call: string): Thesis | undefined {
-  return THESES.find((t) => t.call === call);
+export function getThesis(id: string): Thesis | undefined {
+  const book = getBook(id);
+  if (!book || book.status !== "Siap") return undefined;
+  return { ...bookToFull(book), ocrPages: countIndexedPages(id) };
 }
 
 export function getRelatedTheses(t: Thesis, limit = 3): Thesis[] {
-  const scored = THESES.filter((x) => x.id !== t.id)
-    .map((x) => {
-      const shared = x.keywords.filter((k) => t.keywords.includes(k)).length;
-      return { x, shared };
-    })
-    .sort((a, b) => b.shared - a.shared)
-    .slice(0, limit)
-    .map(({ x }) => x);
-  return scored;
+  return publicBooks()
+    .filter((x) => x.id !== t.id)
+    .sort(
+      (a, b) =>
+        (b.faculty === t.faculty ? 1 : 0) - (a.faculty === t.faculty ? 1 : 0) ||
+        b.year - a.year ||
+        a.title.localeCompare(b.title)
+    )
+    .slice(0, limit);
+}
+
+export function listCategories(): string[] {
+  return Array.from(
+    new Set(listBooks().filter((b) => b.status === "Siap").map((b) => b.category))
+  ).sort((a, b) => a.localeCompare(b));
 }
 
 export function getStats() {
-  return STATS;
+  const books = listBooks().filter((b) => b.status === "Siap");
+  const categories = new Set(books.map((b) => b.category));
+  const latestYear = books.reduce((max, b) => Math.max(max, b.year), 0);
+  return {
+    total: books.length,
+    ocrPages: books.reduce((sum, b) => sum + countIndexedPages(b.id), 0),
+    faculties: categories.size,
+    universities: 0,
+    asOf: String(latestYear || new Date().getFullYear()),
+  };
 }

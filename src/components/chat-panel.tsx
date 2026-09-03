@@ -16,7 +16,7 @@ export function ChatPanel({
   thesisId,
   thesisTitle,
 }: {
-  thesisId: number;
+  thesisId: string;
   thesisTitle: string;
 }) {
   const {
@@ -25,19 +25,19 @@ export function ChatPanel({
     handleInputChange,
     handleSubmit,
     isLoading,
-    stop,
-  } = useChat({
-    api: "/api/chat",
-    body: { thesis: { id: thesisId } },
-    initialMessages: [
-      {
-        id: "greeting",
-        role: "assistant",
-        content:
-          `Saya telah membaca abstrak "${thesisTitle}". Tanya saya tentang metodologi, dapatan, atau kata kunci tesis ini.`,
-      },
-    ],
-  });
+        stop,
+      } = useChat({
+        api: "/api/chat",
+        body: { thesis: { id: thesisId } },
+        initialMessages: [
+          {
+            id: "greeting",
+            role: "assistant",
+            content:
+              `Saya telah membaca teks penuh "${thesisTitle}". Tanya saya tentang kandungan, kaedah, dapatan, atau bab tertentu dalam dokumen ini.`,
+          },
+        ],
+      });
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {

@@ -10,7 +10,6 @@ import { ThesisTable } from "@/components/thesis-table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FACULTIES } from "@/lib/theses-data";
 import { useDebounced } from "@/hooks/use-debounced";
 import type { ThesisSummary } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -18,6 +17,7 @@ import { cn } from "@/lib/utils";
 type CatalogResponse = {
   items: ThesisSummary[];
   total: number;
+  faculties: string[];
   catalogue: { ocrPages: number };
 };
 
@@ -108,7 +108,7 @@ export function ThesisCatalog() {
       {/* toolbar */}
       <div className="mt-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-wrap gap-2">
-          {["Semua", ...FACULTIES].map((f) => (
+          {["Semua", ...(data?.faculties ?? [])].map((f) => (
             <button
               key={f}
               onClick={() => setFaculty(f)}
