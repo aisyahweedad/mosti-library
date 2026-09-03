@@ -51,6 +51,9 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-2">
+          <Button asChild variant="outline" size="sm" className="hidden sm:inline-flex">
+            <Link href="/login">Log masuk</Link>
+          </Button>
           <ThemeToggle />
           <MobileNav />
         </div>
@@ -81,6 +84,9 @@ function MobileNav() {
               {n.label}
             </Link>
           ))}
+          <Button asChild variant="outline" size="sm" className="mt-2 self-start">
+            <Link href="/login">Log masuk</Link>
+          </Button>
         </div>
       </SheetContent>
     </Sheet>
