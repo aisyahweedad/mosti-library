@@ -1,36 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ARKIB — Pustaka Digital Kebangsaan
 
-## Getting Started
+Prototaip antaramuka untuk arkib tesis &amp; disertasi kebangsaan berkuasa AI.
+Dibina dengan Next.js 14 (App Router), Tailwind CSS + shadcn/ui, TanStack
+Query/Table/Virtual, dengan gaya tema MOSTI.
 
-First, run the development server:
+## Stack
+
+| Lapisan          | Teknologi                                                |
+| ---------------- | -------------------------------------------------------- |
+| Frontend         | Next.js 14 · React 18 · TypeScript                       |
+| UI               | Tailwind CSS v3 · shadcn/ui (Radix primitives)           |
+| State & data     | TanStack Query 5 · TanStack Table 8 · TanStack Virtual 3 |
+| Carian instant   | Slot `src/lib/search.ts` — sedia untuk Meilisearch       |
+| Chat (streaming) | Vercel AI SDK v3 (`useChat`)                             |
+
+## Mulakan
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev        # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Cara ia berfungsi sekarang
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+* **Data**: 56 tesis contoh dalam `src/lib/theses-data.ts`. Disediakan melalui
+  API mock—`/api/theses`, `/api/theses/[id]`, `/api/stats`.
+* **Carian**: `src/lib/search.ts` menjalankan penilaan padanan setempat dengan
+  toleransi ejaan (Levenshtein ≤ 3 aksara) untuk meniru kelakuan Meilisearch.
+  Tukar probe dalaman kepada client Meilisearch tanpa menyentuh UI.
+* **Chat**: `/api/chat` aktif menstrim jawapan ("menaip" macam ChatGPT)
+  menggunakan format data-stream v1 Vercel AI SDK. Untuk jana jawapan sebenar,
+  ganti fungsi `buildAnswer` dengan `streamText` + model (cth. `@ai-sdk/anthropic`)
+  dan masukkan semula semantek daripada teks OCR.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Seni bina laluan
 
-## Learn More
+```
+/                    Laman utama — hero, carian ≺K, statistik, katalog
+/tesis/[id]          Halaman tesis statik (SEO) — ringkasan AI + chat
+/api/theses          Carian/tapisan katalog (query, faculty, page, pageSize)
+/api/theses/[id]     Satu tesis + tesis berkaitan
+/api/chat            POST stream — chat berasaskan dokumen
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Nota keluaran
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+* Next.js di-pin ke `14.2.35` (tambalan isu keselamatan terkini untuk v14).
+* Tema boleh dilaras melalui pembolehubah CSS dalam `src/app/globals.css`
+  (warna utama MOSTI biru · accent biru/emerald).
