@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, GraduationCap, ScanLine } from "lucide-react";
 
-import { ChatPanel } from "@/components/chat-panel";
+import { LazyChatPanel } from "@/components/chat-panel-lazy";
 import { ThesisCard } from "@/components/thesis-card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -97,6 +97,7 @@ export default function ThesisPage({ params }: { params: { id: string } }) {
             <TabsList>
               <TabsTrigger value="ringkasan">Ringkasan AI</TabsTrigger>
               <TabsTrigger value="metadata">Metadata</TabsTrigger>
+              <TabsTrigger value="pratonton">Pratonton</TabsTrigger>
             </TabsList>
 
             <TabsContent value="ringkasan" className="mt-5">
@@ -160,11 +161,34 @@ export default function ThesisPage({ params }: { params: { id: string } }) {
                 ))}
               </dl>
             </TabsContent>
+
+            <TabsContent value="pratonton" className="mt-5">
+              <div className="overflow-hidden rounded-2xl border border-border bg-card">
+                <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
+                  <p className="text-sm text-muted-foreground">
+                    Pratonton 10 halaman pertama dokumen.
+                  </p>
+                  <a
+                    href={`/api/theses/${thesis.id}/preview`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm font-medium text-primary hover:underline"
+                  >
+                    Buka penuh
+                  </a>
+                </div>
+                <iframe
+                  src={`/api/theses/${thesis.id}/preview`}
+                  title="Pratonton dokumen"
+                  className="h-[70vh] w-full bg-muted/40"
+                />
+              </div>
+            </TabsContent>
           </Tabs>
         </div>
 
         <div className="lg:sticky lg:top-24 lg:self-start">
-          <ChatPanel thesisId={thesis.id} thesisTitle={thesis.title} />
+          <LazyChatPanel thesisId={thesis.id} thesisTitle={thesis.title} />
         </div>
       </div>
 

@@ -43,12 +43,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  BOOK_KINDS,
-  BOOK_STATUSES,
-  type Book,
-  type BookStatus,
-} from "@/lib/book-types";
+import { BOOK_STATUSES, type Book, type BookStatus } from "@/lib/book-types";
 import { cn } from "@/lib/utils";
 
 const STATUS_VARIANT: Record<
@@ -56,12 +51,13 @@ const STATUS_VARIANT: Record<
   "default" | "secondary" | "outline" | "destructive"
 > = {
   Siap: "default",
+  "Dimuat Naik": "secondary",
   "Sedang Diproses": "secondary",
   Menunggu: "outline",
   Gagal: "destructive",
 };
 
-const KIND_VARIANT: Record<"Buku" | "Tesis", "secondary" | "outline"> = {
+const KIND_VARIANT: Record<string, "secondary" | "outline"> = {
   Buku: "secondary",
   Tesis: "outline",
 };
@@ -133,6 +129,15 @@ export function BooksTable() {
   const [kind, setKind] = React.useState<string>("all");
   const [status, setStatus] = React.useState<string>("all");
 
+  const { data: kindOptions } = useQuery({
+    queryKey: ["catalog-options"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/catalog");
+      if (!res.ok) throw new Error("Gagal memuat pilihan katalog");
+      return (await res.json()) as { kinds: string[] };
+    },
+  });
+
   React.useEffect(() => {
     const t = setTimeout(() => setDebouncedQ(q), 300);
     return () => clearTimeout(t);
@@ -191,7 +196,9 @@ export function BooksTable() {
         accessorKey: "kind",
         header: "Jenis",
         cell: ({ row }) => (
-          <Badge variant={KIND_VARIANT[row.original.kind]}>{row.original.kind}</Badge>
+          <Badge variant={KIND_VARIANT[row.original.kind] ?? "secondary"}>
+            {row.original.kind}
+          </Badge>
         ),
         size: 90,
       },
@@ -259,7 +266,7 @@ export function BooksTable() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Semua Jenis</SelectItem>
-            {BOOK_KINDS.map((k) => (
+            {(kindOptions?.kinds ?? []).map((k) => (
               <SelectItem key={k} value={k}>
                 {k}
               </SelectItem>

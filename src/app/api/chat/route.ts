@@ -142,7 +142,6 @@ export async function POST(req: NextRequest) {
     headers: {
       "Content-Type": "text/plain; charset=utf-8",
       "Cache-Control": "no-cache, no-transform",
-      "X-Vercel-AI-Data-Stream": "v1",
     },
   });
 }

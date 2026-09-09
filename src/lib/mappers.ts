@@ -5,10 +5,11 @@ export function bookToSummary(b: Book): ThesisSummary {
   return {
     id: b.id,
     call: b.call,
+    category: b.category,
     faculty: b.category,
     title: b.title,
     author: b.author,
-    university: "",
+    university: b.university,
     year: b.year,
     pages: b.pages,
     ocrAccuracy: "",
@@ -19,7 +20,7 @@ export function bookToSummary(b: Book): ThesisSummary {
 export function bookToFull(b: Book): Thesis {
   return {
     ...bookToSummary(b),
-    degree: "",
+    degree: b.degree,
     ocrPages: 0,
     abstract: b.abstract,
   };
@@ -29,6 +30,7 @@ export function toSummary(t: Thesis): ThesisSummary {
   return {
     id: t.id,
     call: t.call,
+    category: t.category,
     faculty: t.faculty,
     title: t.title,
     author: t.author,

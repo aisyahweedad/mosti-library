@@ -13,12 +13,7 @@ export type {
   BookStatus,
   NewBookInput,
 } from "@/lib/book-types";
-export {
-  BOOK_KINDS,
-  BOOK_STATUSES,
-  BOOK_LANGUAGES,
-  MONTHLY_UPLOADS,
-} from "@/lib/book-types";
+export { BOOK_STATUSES, BOOK_LANGUAGES, MONTHLY_UPLOADS } from "@/lib/book-types";
 
 type BookRow = {
   id: string;
@@ -36,6 +31,9 @@ type BookRow = {
   object_key: string | null;
   abstract: string;
   keywords: string;
+  university: string;
+  degree: string;
+  faculty: string;
   uploaded_at: string;
   collated_by: string;
 };
@@ -70,6 +68,9 @@ function rowToBook(row: BookRow): Book {
     objectKey: row.object_key,
     abstract: row.abstract ?? "",
     keywords: parseKeywords(row.keywords ?? "[]"),
+    university: row.university ?? "",
+    degree: row.degree ?? "",
+    faculty: row.faculty ?? "",
   };
 }
 
@@ -87,12 +88,55 @@ export function updateBookProcessing(
     .run(status, progress, id);
 }
 
-export function markBookReady(id: string, abstract: string, keywords: string[]) {
+export function markBookReady(
+  id: string,
+  abstract: string,
+  keywords: string[],
+  extra: { university?: string; degree?: string; faculty?: string } = {}
+) {
   getDb()
     .prepare(
-      "UPDATE books SET status = 'Siap', progress = 100, abstract = ?, keywords = ? WHERE id = ?"
+      "UPDATE books SET status = 'Siap', progress = 100, abstract = ?, keywords = ?, university = ?, degree = ?, faculty = ? WHERE id = ?"
     )
-    .run(abstract, JSON.stringify(keywords), id);
+    .run(
+      abstract,
+      JSON.stringify(keywords),
+      extra.university ?? "",
+      extra.degree ?? "",
+      extra.faculty ?? "",
+      id
+    );
+}
+
+export function updateBookMetadata(
+  id: string,
+  meta: { university?: string; degree?: string; faculty?: string }
+) {
+  const sets: string[] = [];
+  const values: string[] = [];
+  for (const [col, val] of Object.entries(meta)) {
+    if (val === undefined) continue;
+    if (!["university", "degree", "faculty"].includes(col)) continue;
+    sets.push(`${col} = ?`);
+    values.push(String(val));
+  }
+  if (sets.length === 0) return;
+  getDb().prepare(`UPDATE books SET ${sets.join(", ")} WHERE id = ?`).run(
+    ...values,
+    id
+  );
+}
+
+export function updateBookCategory(id: string, category: string) {
+  getDb()
+    .prepare("UPDATE books SET category = ? WHERE id = ?")
+    .run(category, id);
+}
+
+export function markBookUploaded(id: string) {
+  getDb()
+    .prepare("UPDATE books SET status = 'Dimuat Naik', progress = 100 WHERE id = ?")
+    .run(id);
 }
 
 export function markBookFailed(id: string) {
@@ -124,36 +168,50 @@ export function addBook(
   opts: { objectKey?: string | null; collatedBy?: string } = {}
 ): Book {
   const db = getDb();
-  const count = (db.prepare("SELECT COUNT(*) AS n FROM books").get() as {
-    n: number;
-  }).n;
-  const num = pad(count + 1);
-  const id = `ark-${num}`;
-  const call = `${input.kind === "Tesis" ? "TESIS" : "BUKU"}.ARK-${input.year}-${num}`;
   const uploadedAt = new Date().toISOString();
   const collatedBy = opts.collatedBy || "Anda";
+  const nextNum = () =>
+    (db
+      .prepare("SELECT CAST(SUBSTR(id, 5) AS INTEGER) AS n FROM books")
+      .all() as unknown as { n: number }[]).reduce(
+      (m, r) => Math.max(m, r.n ?? 0),
+      0
+    ) + 1;
 
-  db.prepare(
-    `INSERT INTO books (id, call, title, author, year, kind, category, language, pages, size_mb, status, progress, object_key, uploaded_at, collated_by)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Menunggu', 0, ?, ?, ?)`
-  ).run(
-    id,
-    call,
-    input.title,
-    input.author,
-    input.year,
-    input.kind,
-    input.category,
-    input.language,
-    input.pages,
-    input.sizeMB,
-    opts.objectKey ?? null,
-    uploadedAt,
-    collatedBy
-  );
-
-  const book = getBook(id)!;
-  return book;
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const num = pad(nextNum());
+    const id = `ark-${num}`;
+    const call = `${input.kind === "Tesis" ? "TESIS" : "BUKU"}.ARK-${input.year}-${num}`;
+    try {
+      db.prepare(
+        `INSERT INTO books (id, call, title, author, year, kind, category, language, pages, size_mb, status, progress, object_key, uploaded_at, collated_by)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Menunggu', 0, ?, ?, ?)`
+      ).run(
+        id,
+        call,
+        input.title,
+        input.author,
+        input.year,
+        input.kind,
+        input.category,
+        input.language,
+        input.pages,
+        input.sizeMB,
+        opts.objectKey ?? null,
+        uploadedAt,
+        collatedBy
+      );
+      return getBook(id)!;
+    } catch (err) {
+      if (
+        !(err instanceof Error) ||
+        !err.message.includes("UNIQUE constraint failed")
+      ) {
+        throw err;
+      }
+    }
+  }
+  throw new Error("Tidak dapat menjana id unik untuk buku");
 }
 
 export function removeBook(id: string): Book | null {
@@ -190,6 +248,7 @@ export function adminStats() {
     books: byKind("Buku"),
     theses: byKind("Tesis"),
     ready: byStatus("Siap"),
+    uploaded: byStatus("Dimuat Naik"),
     processing: byStatus("Sedang Diproses"),
     waiting: byStatus("Menunggu"),
     failed: byStatus("Gagal"),

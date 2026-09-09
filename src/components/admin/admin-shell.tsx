@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  Settings,
   Upload,
   Users,
 } from "lucide-react";
@@ -33,6 +34,7 @@ const NAV = [
   { href: "/admin/upload", label: "Muat Naik Buku", icon: Upload },
   { href: "/admin/books", label: "Senarai Buku", icon: BookOpen },
   { href: "/admin/users", label: "Pengguna", icon: Users },
+  { href: "/admin/settings", label: "Tetapan", icon: Settings },
 ];
 
 const TITLES: Record<string, string> = {
@@ -40,6 +42,7 @@ const TITLES: Record<string, string> = {
   "/admin/upload": "Muat Naik Buku",
   "/admin/books": "Senarai Buku",
   "/admin/users": "Pengguna",
+  "/admin/settings": "Tetapan",
 };
 
 function initials(name: string) {

@@ -3,6 +3,8 @@ import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 
 import { hashPassword } from "@/lib/password";
+import { migrateLegacyEmbeddings } from "@/lib/vectors";
+import { LEGACY_CATEGORIES, SUBJECT_CATEGORY_NAMES } from "@/lib/categories";
 
 export const DATA_DIR = path.join(process.cwd(), "data");
 
@@ -65,13 +67,26 @@ function runMigrations(db: DatabaseSync) {
     );
 
     -- vector index: one row per embedded text chunk of a book
+    -- (embeddings live in the vec0 table below once the index is ready)
     CREATE TABLE IF NOT EXISTS chunks (
       book_id TEXT NOT NULL,
       chunk_index INTEGER NOT NULL,
       page INTEGER,
       text TEXT NOT NULL,
-      embedding TEXT NOT NULL,
       PRIMARY KEY (book_id, chunk_index)
+    );
+
+    -- book-agnostic key/value store, currently holds the embedding dimension
+    CREATE TABLE IF NOT EXISTS vector_meta (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS catalog_options (
+      group_key TEXT NOT NULL,
+      value TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      PRIMARY KEY (group_key, value)
     );
 
     CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);
@@ -83,14 +98,35 @@ function runMigrations(db: DatabaseSync) {
   // additive columns for books created by older schema versions
   ensureColumn(db, "books", "abstract", "TEXT NOT NULL DEFAULT ''");
   ensureColumn(db, "books", "keywords", "TEXT NOT NULL DEFAULT '[]'");
+  ensureColumn(db, "books", "university", "TEXT NOT NULL DEFAULT ''");
+  ensureColumn(db, "books", "degree", "TEXT NOT NULL DEFAULT ''");
+  ensureColumn(db, "books", "faculty", "TEXT NOT NULL DEFAULT ''");
 
-  // one-time purge of the demo catalogue seeded in earlier versions
-  db.exec(
-    `DELETE FROM books WHERE id IN (
-      'ark-0001','ark-0002','ark-0003','ark-0004','ark-0005','ark-0006',
-      'ark-0007','ark-0008','ark-0009','ark-0010','ark-0011','ark-0012'
-    )`
-  );
+  // one-time purge of the demo catalogue seeded in earlier versions.
+  // Guarded by a meta key so real imports that reuse ids ark-0001..0012
+  // (addBook numbers rows by COUNT + 1) are never deleted on later startups.
+  const DEMO_PURGED_KEY = "demo_catalogue_purged";
+  const demoPurged = db
+    .prepare("SELECT value FROM vector_meta WHERE key = ?")
+    .get(DEMO_PURGED_KEY) as { value: string } | undefined;
+  if (!demoPurged) {
+    db.exec(
+      `DELETE FROM books WHERE id IN (
+        'ark-0001','ark-0002','ark-0003','ark-0004','ark-0005','ark-0006',
+        'ark-0007','ark-0008','ark-0009','ark-0010','ark-0011','ark-0012'
+      )`
+    );
+    db.prepare(
+      `INSERT OR REPLACE INTO vector_meta (key, value) VALUES (?, ?)`
+    ).run(DEMO_PURGED_KEY, String(Date.now()));
+  }
+
+  // one-time migration of legacy JSON embeddings into the sqlite-vec index
+  try {
+    migrateLegacyEmbeddings(db);
+  } catch (err) {
+    console.error("[db] migrasi vektor lama gagal:", err);
+  }
 }
 
 function ensureColumn(
@@ -105,6 +141,32 @@ function ensureColumn(
   if (!cols.some((c) => c.name === column)) {
     db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition};`);
   }
+}
+
+function seedCatalogOptions(db: DatabaseSync) {
+  const count = db
+    .prepare("SELECT COUNT(*) AS n FROM catalog_options")
+    .get() as DbRow;
+  if (Number(count.n) > 0) return;
+
+  const insert = db.prepare(
+    "INSERT OR IGNORE INTO catalog_options (group_key, value, created_at) VALUES (?, ?, ?)"
+  );
+  const now = new Date().toISOString();
+  const kinds = ["Buku", "Tesis"];
+  for (const k of kinds) insert.run("kind", k, now);
+  for (const c of SUBJECT_CATEGORY_NAMES) insert.run("category", c, now);
+}
+
+/** Replace the legacy tag taxonomy with the Senarai Subjek Utama Sains. */
+function syncSubjectCategories(db: DatabaseSync) {
+  const now = new Date().toISOString();
+  const del = db.prepare("DELETE FROM catalog_options WHERE group_key = 'category' AND value = ?");
+  for (const legacy of LEGACY_CATEGORIES) del.run(legacy);
+  const insert = db.prepare(
+    "INSERT OR IGNORE INTO catalog_options (group_key, value, created_at) VALUES (?, ?, ?)"
+  );
+  for (const name of SUBJECT_CATEGORY_NAMES) insert.run("category", name, now);
 }
 
 function seedUsers(db: DatabaseSync) {
@@ -132,8 +194,15 @@ function seedUsers(db: DatabaseSync) {
 
 function init() {
   mkdirSync(DATA_DIR, { recursive: true });
-  const db = new DatabaseSync(DB_PATH);
+  let db: DatabaseSync;
+  try {
+    db = new DatabaseSync(DB_PATH, { allowExtension: true });
+  } catch {
+    db = new DatabaseSync(DB_PATH);
+  }
   runMigrations(db);
+  seedCatalogOptions(db);
+  syncSubjectCategories(db);
   seedUsers(db);
   return db;
 }

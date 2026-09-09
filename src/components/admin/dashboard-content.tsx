@@ -35,6 +35,7 @@ import type { BookStatus } from "@/lib/book-types";
 
 const STATUS_COLORS: Record<BookStatus, string> = {
   Siap: "#16a34a",
+  "Dimuat Naik": "#0284c7",
   "Sedang Diproses": "#d97706",
   Menunggu: "#737373",
   Gagal: "#dc2626",
@@ -42,6 +43,7 @@ const STATUS_COLORS: Record<BookStatus, string> = {
 
 const STATUS_TO_KEY: Record<BookStatus, string> = {
   Siap: "ready",
+  "Dimuat Naik": "uploaded",
   "Sedang Diproses": "processing",
   Menunggu: "waiting",
   Gagal: "failed",
@@ -52,6 +54,7 @@ const STATUS_BADGE: Record<
   "default" | "secondary" | "outline" | "destructive"
 > = {
   Siap: "default",
+  "Dimuat Naik": "secondary",
   "Sedang Diproses": "secondary",
   Menunggu: "outline",
   Gagal: "destructive",

@@ -56,7 +56,9 @@ function tokenize(s: string): string[] {
 }
 
 function publicBooks() {
-  return listBooks().filter((b) => b.status === "Siap").map(bookToFull);
+  return listBooks()
+    .filter((b) => b.status === "Siap")
+    .map(bookToFull);
 }
 
 /**
@@ -111,16 +113,16 @@ export function searchTheses({
     })
     .filter(({ score }) => score > 0)
     .filter(
-      ({ t }) => faculty === undefined || faculty === "Semua" || t.faculty === faculty
+      ({ t }) => faculty === undefined || faculty === "Semua" || t.category === faculty
     )
     .sort(
       (a, b) => b.score - a.score || b.t.year - a.t.year || a.t.title.localeCompare(b.t.title)
     )
-    .map(({ t }) => t);
+    .map(({ t }) => toSummary({ ...t, faculty: t.category }));
 
   const start = (page - 1) * pageSize;
   return {
-    items: ranked.slice(start, start + pageSize).map(toSummary),
+    items: ranked.slice(start, start + pageSize),
     total: ranked.length,
     page,
     pageSize,
@@ -129,7 +131,8 @@ export function searchTheses({
 
 export function getThesis(id: string): Thesis | undefined {
   const book = getBook(id);
-  if (!book || book.status !== "Siap") return undefined;
+  if (!book || (book.status !== "Siap" && book.status !== "Dimuat Naik"))
+    return undefined;
   return { ...bookToFull(book), ocrPages: countIndexedPages(id) };
 }
 
@@ -147,19 +150,22 @@ export function getRelatedTheses(t: Thesis, limit = 3): Thesis[] {
 
 export function listCategories(): string[] {
   return Array.from(
-    new Set(listBooks().filter((b) => b.status === "Siap").map((b) => b.category))
+    new Set(publicBooks().map((b) => b.category))
   ).sort((a, b) => a.localeCompare(b));
 }
 
 export function getStats() {
-  const books = listBooks().filter((b) => b.status === "Siap");
+  const books = publicBooks();
   const categories = new Set(books.map((b) => b.category));
+  const universities = new Set(
+    books.map((b) => b.university.trim()).filter(Boolean)
+  );
   const latestYear = books.reduce((max, b) => Math.max(max, b.year), 0);
   return {
     total: books.length,
     ocrPages: books.reduce((sum, b) => sum + countIndexedPages(b.id), 0),
     faculties: categories.size,
-    universities: 0,
+    universities: universities.size,
     asOf: String(latestYear || new Date().getFullYear()),
   };
 }

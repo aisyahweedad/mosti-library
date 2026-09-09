@@ -1,9 +1,11 @@
 import { embedTexts, chatCompletion, llmConfigured, type ChatMessage } from "@/lib/ai";
-import { getBook, markBookFailed, markBookReady, updateBookProcessing } from "@/lib/books-data";
+import { getBook, markBookFailed, markBookReady, updateBookProcessing, updateBookCategory } from "@/lib/books-data";
 import type { Book } from "@/lib/book-types";
+import { LEGACY_CATEGORIES, classifyBookCategory } from "@/lib/categories";
+import { extractBookMetadata } from "@/lib/metadata";
 import { readObject } from "@/lib/object-store";
 import { extractPdfPages } from "@/lib/pdf";
-import { saveChunks } from "@/lib/vectors";
+import { saveChunks, initVectorIndex } from "@/lib/vectors";
 
 const MAX_CHUNK_CHARS = 2800; // ≈ 700 tokens
 const OVERLAP_WORDS = 90; // ≈ 100 tokens of context overlap
@@ -181,7 +183,7 @@ async function generateSummary(book: Book, pages: string[]): Promise<{ summary: 
   return { summary: cleaned || "Ringkasan belum tersedia.", keywords: words.slice(0, 6) };
 }
 
-const EMBED_BATCH = 6;
+const EMBED_BATCH = Math.max(1, Number(process.env.EMBED_BATCH ?? 8));
 
 /**
  * Full ingestion pipeline for a book: extract text → chunk → embed →
@@ -220,6 +222,9 @@ export async function ingestBook(bookId: string): Promise<void> {
       updateBookProcessing(bookId, "Sedang Diproses", Math.min(84, progress));
     }
 
+    const dim = embeddings[0]?.length ?? 0;
+    if (dim > 0) initVectorIndex(dim);
+
     saveChunks(
       bookId,
       chunks.map((c, index) => ({
@@ -233,7 +238,21 @@ export async function ingestBook(bookId: string): Promise<void> {
     updateBookProcessing(bookId, "Sedang Diproses", 90);
 
     const { summary, keywords } = await generateSummary(book, pages);
-    markBookReady(bookId, summary, keywords);
+    const meta = await extractBookMetadata(book, pages.slice(0, 4));
+    markBookReady(bookId, summary, keywords, meta);
+
+    if (LEGACY_CATEGORIES.includes(book.category as (typeof LEGACY_CATEGORIES)[number])) {
+      try {
+        const category = await classifyBookCategory(
+          book,
+          pages.slice(0, 3),
+          keywords.join(" ")
+        );
+        updateBookCategory(bookId, category);
+      } catch (err) {
+        console.warn(`[ingest] ${bookId} klasifikasi kategori gagal, kekal '${book.category}':`, err);
+      }
+    }
   } catch (err) {
     console.error(`[ingest] ${bookId} failed:`, err);
     markBookFailed(bookId);

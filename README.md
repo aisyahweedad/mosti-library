@@ -23,7 +23,7 @@ Query/Table/Virtual, dengan gaya tema MOSTI.
 
 ```bash
 npm install
-npm run dev        # http://localhost:3000
+npm run dev        # http://localhost:5001
 ```
 
 RustFS (storan objek, S3-compatible) — jalankan sekali sebagai servis dev:

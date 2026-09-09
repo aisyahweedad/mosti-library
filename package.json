@@ -3,7 +3,7 @@
   "version": "0.2.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 5001",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
@@ -28,7 +28,6 @@
     "@tanstack/react-query": "^5.102.8",
     "@tanstack/react-table": "^8.21.3",
     "@tanstack/react-virtual": "^3.14.10",
-    "ai": "^3.4.33",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
@@ -36,12 +35,14 @@
     "lucide-react": "^1.39.0",
     "next": "^14.2.35",
     "next-themes": "^0.4.6",
+    "pdf-lib": "^1.17.1",
     "pdf-parse": "^2.4.5",
     "react": "^18",
     "react-dom": "^18",
     "react-hook-form": "^7.87.0",
     "recharts": "^3.10.1",
     "sonner": "^2.0.8",
+    "sqlite-vec": "^0.1.9",
     "tailwind-merge": "^3.6.0",
     "tailwindcss-animate": "^1.0.7",
     "zod": "^3.25.76"
@@ -54,6 +55,7 @@
     "eslint-config-next": "14.2.21",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
+    "tsx": "^4.23.13",
     "typescript": "^5"
   }
 }

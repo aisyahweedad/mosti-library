@@ -21,21 +21,42 @@ function assertConfigured() {
   }
 }
 
+const MAX_RETRIES = 9;
+
 async function postJson(path: string, payload: unknown) {
   assertConfigured();
-  const res = await fetch(`${BASE_URL}${path}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${API_KEY}`,
-    },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`LiteLLM ${res.status}: ${text.slice(0, 300)}`);
+  let lastErr: unknown;
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const res = await fetch(`${BASE_URL}${path}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${API_KEY}`,
+        },
+        body: JSON.stringify(payload),
+      });
+      if (res.status === 429 || res.status >= 500) {
+        const text = await res.text().catch(() => "");
+        lastErr = new Error(`LiteLLM ${res.status}: ${text.slice(0, 300)}`);
+      } else if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(`LiteLLM ${res.status}: ${text.slice(0, 300)}`);
+      } else {
+        return res;
+      }
+    } catch (err) {
+      lastErr = err;
+    }
+    if (attempt < MAX_RETRIES) {
+      const delay = Math.min(3000 * Math.pow(2, attempt), 60000);
+      console.warn(
+        `[ai] ${path} percubaan ${attempt + 1}/${MAX_RETRIES + 1} gagal, semula dalam ${Math.round(delay / 1000)}s`
+      );
+      await new Promise((r) => setTimeout(r, delay));
+    }
   }
-  return res;
+  throw lastErr instanceof Error ? lastErr : new Error(String(lastErr));
 }
 
 /** Embed a batch of texts via the OpenAI-compatible /v1/embeddings endpoint. */

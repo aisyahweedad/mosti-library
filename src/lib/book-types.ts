@@ -1,13 +1,17 @@
-export type BookStatus = "Siap" | "Sedang Diproses" | "Menunggu" | "Gagal";
+export type BookStatus =
+  | "Siap"
+  | "Dimuat Naik"
+  | "Sedang Diproses"
+  | "Menunggu"
+  | "Gagal";
 
-export type BookKind = "Buku" | "Tesis";
+export type BookKind = string;
 
 export type BookLanguage = "BM" | "EN" | "AR";
 
-export const BOOK_KINDS: BookKind[] = ["Buku", "Tesis"];
-
 export const BOOK_STATUSES: BookStatus[] = [
   "Siap",
+  "Dimuat Naik",
   "Sedang Diproses",
   "Menunggu",
   "Gagal",
@@ -33,6 +37,9 @@ export type Book = {
   objectKey: string | null;
   abstract: string;
   keywords: string[];
+  university: string;
+  degree: string;
+  faculty: string;
 };
 
 export type NewBookInput = {

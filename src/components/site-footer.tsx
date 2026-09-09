@@ -31,7 +31,7 @@ export function SiteFooter() {
                 <ScanSearch className="h-[18px] w-[18px]" />
               </span>
               <span className="font-display text-lg font-bold tracking-tight">
-                ARKIB
+                Pustaka MOSTI
               </span>
             </Link>
             <p className="mt-4 max-w-md text-sm text-muted-foreground">
@@ -75,7 +75,7 @@ export function SiteFooter() {
           </div>
         </div>
         <div className="mt-12 flex flex-col gap-2 border-t border-border/70 pt-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-          <p>© 2025 ARKIB — prototype antaramuka. Data tesis adalah rekaan untuk tunjuk cara.</p>
+          <p>© 2025 Pustaka MOSTI — prototype antaramuka. Data tesis adalah rekaan untuk tunjuk cara.</p>
           <p className="font-mono">v0.2 · dibina dengan shadcn/ui</p>
         </div>
       </div>

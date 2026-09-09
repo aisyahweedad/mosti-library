@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { sessionFromRequest } from "@/lib/auth";
-import { BOOK_KINDS, addBook, listBooks, removeBook } from "@/lib/books-data";
+import { listKinds } from "@/lib/catalog";
+import { addBook, listBooks, removeBook } from "@/lib/books-data";
 import { getDb } from "@/lib/db";
 import { ingestBook } from "@/lib/ingest";
 import { putObject } from "@/lib/object-store";
@@ -110,7 +111,7 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
-  if (!BOOK_KINDS.includes(kind as (typeof BOOK_KINDS)[number])) {
+  if (!listKinds().includes(kind)) {
     return NextResponse.json({ error: "Jenis dokumen tidak sah" }, { status: 400 });
   }
 
@@ -124,7 +125,7 @@ export async function POST(request: Request) {
       title,
       author,
       year,
-      kind: kind as (typeof BOOK_KINDS)[number],
+      kind,
       category: category || "Umum",
       language: (["BM", "EN", "AR"] as const).includes(language as never)
         ? (language as "BM" | "EN" | "AR")

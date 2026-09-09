@@ -30,10 +30,10 @@ export function SiteHeader() {
           </span>
           <span className="flex flex-col leading-none">
             <span className="font-display text-lg font-bold tracking-tight text-foreground">
-              ARKIB
+              Pustaka MOSTI
             </span>
             <span className="text-xs text-muted-foreground">
-              Pustaka Digital Kebangsaan
+              Perpustakaan Digital MOSTI
             </span>
           </span>
         </Link>

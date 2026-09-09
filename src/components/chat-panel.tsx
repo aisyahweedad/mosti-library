@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useChat } from "ai/react";
+import { useChatStream } from "@/components/use-chat-stream";
 import { Bot, Send, Square, User } from "lucide-react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -25,19 +25,19 @@ export function ChatPanel({
     handleInputChange,
     handleSubmit,
     isLoading,
-        stop,
-      } = useChat({
-        api: "/api/chat",
-        body: { thesis: { id: thesisId } },
-        initialMessages: [
-          {
-            id: "greeting",
-            role: "assistant",
-            content:
-              `Saya telah membaca teks penuh "${thesisTitle}". Tanya saya tentang kandungan, kaedah, dapatan, atau bab tertentu dalam dokumen ini.`,
-          },
-        ],
-      });
+    stop,
+  } = useChatStream({
+    api: "/api/chat",
+    body: { thesis: { id: thesisId } },
+    initialMessages: [
+      {
+        id: "greeting",
+        role: "assistant",
+        content:
+          `Saya telah membaca teks penuh "${thesisTitle}". Tanya saya tentang kandungan, kaedah, dapatan, atau bab tertentu dalam dokumen ini.`,
+      },
+    ],
+  });
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
@@ -104,7 +104,7 @@ export function ChatPanel({
             </div>
           ))}
 
-          {isLoading && messages[messages.length - 1]?.role === "user" && (
+          {isLoading && messages[messages.length - 1]?.content === "" && (
             <div className="flex items-start gap-3">
               <Avatar className="h-8 w-8 shrink-0">
                 <AvatarFallback className="bg-accent text-accent-foreground">

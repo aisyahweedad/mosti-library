@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import {
   FileText,
@@ -28,15 +29,6 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
-const CATEGORIES = [
-  "Sains & Teknologi",
-  "Kejuruteraan",
-  "Teknologi Maklumat",
-  "Perubatan & Kesihatan",
-  "Sains Sosial",
-  "Umum",
-];
-
 const schema = z.object({
   title: z.string().min(5, "Tajuk sekurang-kurangnya 5 aksara"),
   author: z.string().min(3, "Nama pengarang diperlukan"),
@@ -45,7 +37,7 @@ const schema = z.object({
     .int()
     .min(1900, "Tahun tidak sah")
     .max(new Date().getFullYear(), "Tahun pada masa hadapan?"),
-  kind: z.enum(["Buku", "Tesis"], { message: "Sila pilih jenis dokumen" }),
+  kind: z.string().min(1, "Sila pilih jenis dokumen"),
   category: z.string().min(1, "Pilih kategori"),
   language: z.enum(["BM", "EN", "AR"], { message: "Pilih bahasa" }),
   pages: z.coerce.number().int().min(1, "Bilangan muka surat sah").max(5000),
@@ -55,22 +47,37 @@ type FormValues = z.infer<typeof schema>;
 
 type Phase = "form" | "uploading" | "done";
 
+type CatalogResponse = {
+  kinds: string[];
+  categories: string[];
+};
+
 export function UploadBookForm() {
   const [file, setFile] = useState<File | null>(null);
   const [dragging, setDragging] = useState(false);
   const [phase, setPhase] = useState<Phase>("form");
   const [progress, setProgress] = useState(0);
 
+  const { data: catalog } = useQuery({
+    queryKey: ["catalog-options"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/catalog");
+      if (!res.ok) throw new Error("Gagal memuat pilihan katalog");
+      return (await res.json()) as CatalogResponse;
+    },
+  });
+
   const {
     register,
     handleSubmit,
     setValue,
+    watch,
     reset,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      kind: "Buku",
+      kind: "",
       category: "",
       language: "BM",
       year: new Date().getFullYear(),
@@ -287,29 +294,36 @@ export function UploadBookForm() {
                 <div className="space-y-2">
                   <Label htmlFor="kind">Jenis Dokumen</Label>
                   <Select
-                    defaultValue="Buku"
-                    onValueChange={(v) =>
-                      setFieldValue("kind", v as FormValues["kind"])
-                    }
+                    value={watch("kind")}
+                    onValueChange={(v) => setValue("kind", v, { shouldValidate: true })}
                   >
                     <SelectTrigger id="kind">
-                      <SelectValue />
+                      <SelectValue placeholder="Pilih jenis dokumen" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Buku">Buku</SelectItem>
-                      <SelectItem value="Tesis">Tesis</SelectItem>
+                      {(catalog?.kinds ?? []).map((k) => (
+                        <SelectItem key={k} value={k}>
+                          {k}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
+                  {errors.kind && (
+                    <p className="text-xs text-destructive">{errors.kind.message}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="category">Kategori</Label>
-                  <Select onValueChange={(v) => setFieldValue("category", v)}>
+                  <Select
+                    value={watch("category")}
+                    onValueChange={(v) => setValue("category", v, { shouldValidate: true })}
+                  >
                     <SelectTrigger id="category">
                       <SelectValue placeholder="Pilih kategori" />
                     </SelectTrigger>
                     <SelectContent>
-                      {CATEGORIES.map((c) => (
+                      {(catalog?.categories ?? []).map((c) => (
                         <SelectItem key={c} value={c}>
                           {c}
                         </SelectItem>
@@ -325,7 +339,7 @@ export function UploadBookForm() {
 
                 <div className="space-y-2">
                   <Label htmlFor="language">Bahasa</Label>
-                  <Select defaultValue="BM" onValueChange={(v) => setFieldValue("language", v)}>
+                  <Select value={watch("language")} onValueChange={(v) => setValue("language", v as FormValues["language"])}>
                     <SelectTrigger id="language">
                       <SelectValue />
                     </SelectTrigger>
@@ -392,11 +406,4 @@ export function UploadBookForm() {
       )}
     </div>
   );
-
-  function setFieldValue(
-    name: "kind" | "category" | "language",
-    value: string
-  ) {
-    setValue(name, value as never);
-  }
 }

@@ -1,6 +1,7 @@
 export type Thesis = {
   id: string;
   call: string;
+  category: string;
   faculty: string;
   title: string;
   author: string;
@@ -18,6 +19,7 @@ export type ThesisSummary = Pick<
   Thesis,
   | "id"
   | "call"
+  | "category"
   | "faculty"
   | "title"
   | "author"
