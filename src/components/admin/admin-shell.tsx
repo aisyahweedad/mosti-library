@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   BookOpen,
   ExternalLink,
-  Landmark,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -72,10 +72,16 @@ function NavList({ user }: { user: SessionUser }) {
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-2.5 border-b px-5 py-5">
-        <Landmark className="h-6 w-6 text-primary" />
+        <Image
+          src="/logomosti.png"
+          alt="Logo MOSTI"
+          width={300}
+          height={250}
+          className="h-8 w-auto"
+        />
         <div>
           <p className="font-display text-base font-bold leading-none tracking-tight">
-            ARKIB
+            Perpustakaan MOSTI
           </p>
           <p className="mt-1 text-[11px] text-muted-foreground">
             Panel Pentadbiran

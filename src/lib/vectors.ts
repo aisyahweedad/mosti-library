@@ -315,6 +315,59 @@ export function searchChunks(
     .slice(0, topK);
 }
 
+export type GlobalChunkHit = {
+  bookId: string;
+  text: string;
+  page: number | null;
+  score: number;
+};
+
+/** Semantic search across every indexed book via the sqlite-vec KNN index. */
+export function searchChunksGlobal(
+  queryEmbedding: number[],
+  topK = 80
+): GlobalChunkHit[] {
+  const db = getDb();
+  const dim = getVectorDim(db);
+  if (dim != null && queryEmbedding.length === dim && loadVectorExtension(db)) {
+    try {
+      const rows = db
+        .prepare(
+          `SELECT partition_by, chunk_index, distance FROM ${VEC_TABLE}
+           WHERE embedding MATCH ? AND k = ?`
+        )
+        .all(JSON.stringify(queryEmbedding), topK) as Array<{
+        partition_by: string;
+        chunk_index: string;
+        distance: number;
+      }>;
+      if (rows.length > 0) {
+        const textStmt = db.prepare(
+          "SELECT page, text FROM chunks WHERE book_id = ? AND chunk_index = ?"
+        );
+        const hits: GlobalChunkHit[] = [];
+        for (const r of rows) {
+          const t = textStmt.get(r.partition_by, Number(r.chunk_index)) as
+            | { page: number | null; text: string }
+            | undefined;
+          if (t) {
+            hits.push({
+              bookId: r.partition_by,
+              text: t.text,
+              page: t.page,
+              score: 1 - r.distance,
+            });
+          }
+        }
+        return hits;
+      }
+    } catch (err) {
+      console.error("[vec] carian global KNN gagal:", err);
+    }
+  }
+  return [];
+}
+
 /** Number of distinct pages that have at least one chunk for a book. */
 export function countIndexedPages(bookId: string): number {
   const db = getDb();

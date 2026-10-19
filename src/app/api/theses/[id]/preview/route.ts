@@ -30,7 +30,7 @@ export async function GET(
   } catch (err) {
     console.error(`[/api/theses/${params.id}/preview]`, err);
     return NextResponse.json(
-      { error: "Pratonton tidak tersedia untuk dokumen ini." },
+      { error: "Paparan tidak tersedia untuk dokumen ini." },
       { status: 500 }
     );
   }

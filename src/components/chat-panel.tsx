@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useChatStream } from "@/components/use-chat-stream";
+import { Markdown } from "@/components/markdown";
 import { Bot, Send, Square, User } from "lucide-react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -93,13 +94,17 @@ export function ChatPanel({
               </Avatar>
               <div
                 className={cn(
-                  "max-w-[85%] whitespace-pre-line rounded-2xl px-4 py-2.5 text-sm leading-relaxed",
+                  "max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed",
                   m.role === "user"
-                    ? "rounded-tr-sm bg-primary text-primary-foreground"
+                    ? "whitespace-pre-line rounded-tr-sm bg-primary text-primary-foreground"
                     : "rounded-tl-sm border border-border bg-muted/40 text-foreground"
                 )}
               >
-                {m.content}
+                {m.role === "assistant" ? (
+                  <Markdown content={m.content} />
+                ) : (
+                  m.content
+                )}
               </div>
             </div>
           ))}

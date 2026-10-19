@@ -16,22 +16,22 @@ type Stats = {
 const ITEMS = [
   {
     key: "total" as const,
-    label: "Tesis & disertasi",
+    label: "Terbitan Digital",
     icon: FileText,
   },
   {
     key: "ocrPages" as const,
-    label: "Muka surat di-OCR",
+    label: "Halaman didigitalkan",
     icon: ScanLine,
   },
   {
     key: "faculties" as const,
-    label: "Fakulti diliputi",
+    label: "Jenis Koleksi",
     icon: Layers,
   },
   {
     key: "universities" as const,
-    label: "Universiti penyumbang",
+    label: "Sumber Penerbitan",
     icon: Landmark,
   },
 ];

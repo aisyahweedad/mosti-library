@@ -182,14 +182,14 @@ export function SettingsForm() {
       <OptionGroupCard
         group="kinds"
         title="Jenis Dokumen"
-        description="Contoh: Buku, Tesis, Jurnal, Laporan Teknikal."
+        description="Contoh: Buku, Terbitan Digital, Jurnal, Laporan Teknikal."
         icon={Layers}
       />
 
       <OptionGroupCard
         group="categories"
-        title="Kategori"
-        description="Contoh: Sains & Teknologi, Kejuruteraan, Sains Sosial."
+        title="Subjek"
+        description="Contoh: Sains Am, Kejuruteraan & Teknologi, Sains Komputer & Teknologi Maklumat."
         icon={Files}
       />
 

@@ -87,7 +87,7 @@ export function ThesisCatalog() {
     <section id="koleksi" className="container scroll-mt-24 py-20">
       <div className="flex flex-col gap-1">
         <h2 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
-          Koleksi tesis
+          Koleksi Terbitan Digital
         </h2>
         <p className="text-sm text-muted-foreground">
           {isPending ? (
@@ -178,7 +178,7 @@ export function ThesisCatalog() {
         ) : items.length === 0 ? (
           <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border py-24 text-center">
             <p className="font-display text-lg font-semibold">
-              Tiada tesis sepadan.
+              Tiada terbitan sepadan.
             </p>
             <p className="text-sm text-muted-foreground">
               Cuba kata kunci lain atau padam carian semasa.

@@ -3,11 +3,12 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import {
   FileText,
   Loader2,
+  Plus,
   ScrollText,
   UploadCloud,
   X,
@@ -38,7 +39,7 @@ const schema = z.object({
     .min(1900, "Tahun tidak sah")
     .max(new Date().getFullYear(), "Tahun pada masa hadapan?"),
   kind: z.string().min(1, "Sila pilih jenis dokumen"),
-  category: z.string().min(1, "Pilih kategori"),
+  category: z.string().min(1, "Pilih subjek"),
   language: z.enum(["BM", "EN", "AR"], { message: "Pilih bahasa" }),
   pages: z.coerce.number().int().min(1, "Bilangan muka surat sah").max(5000),
 });
@@ -53,10 +54,12 @@ type CatalogResponse = {
 };
 
 export function UploadBookForm() {
+  const queryClient = useQueryClient();
   const [file, setFile] = useState<File | null>(null);
   const [dragging, setDragging] = useState(false);
   const [phase, setPhase] = useState<Phase>("form");
   const [progress, setProgress] = useState(0);
+  const [newSubject, setNewSubject] = useState("");
 
   const { data: catalog } = useQuery({
     queryKey: ["catalog-options"],
@@ -82,6 +85,25 @@ export function UploadBookForm() {
       language: "BM",
       year: new Date().getFullYear(),
     },
+  });
+
+  const addSubject = useMutation({
+    mutationFn: async (value: string) => {
+      const res = await fetch("/api/admin/catalog", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ group: "category", value }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? "Gagal menambah subjek");
+    },
+    onSuccess: (_data, value) => {
+      setValue("category", value, { shouldValidate: true });
+      setNewSubject("");
+      queryClient.invalidateQueries({ queryKey: ["catalog-options"] });
+      toast.success("Subjek baharu ditambah");
+    },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   function pickFile(f: File | null) {
@@ -181,7 +203,7 @@ export function UploadBookForm() {
           <CardHeader>
             <CardTitle>Maklumat Dokumen</CardTitle>
             <CardDescription>
-              Muat naik buku atau tesis baharu untuk diterbitkan dalam repositori.
+              Muat naik buku atau terbitan digital baharu untuk diterbitkan dalam repositori.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -314,13 +336,13 @@ export function UploadBookForm() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="category">Kategori</Label>
+                  <Label htmlFor="category">Subjek</Label>
                   <Select
                     value={watch("category")}
                     onValueChange={(v) => setValue("category", v, { shouldValidate: true })}
                   >
                     <SelectTrigger id="category">
-                      <SelectValue placeholder="Pilih kategori" />
+                      <SelectValue placeholder="Pilih subjek" />
                     </SelectTrigger>
                     <SelectContent>
                       {(catalog?.categories ?? []).map((c) => (
@@ -335,6 +357,30 @@ export function UploadBookForm() {
                       {errors.category.message}
                     </p>
                   )}
+                  <div className="flex gap-2 pt-1">
+                    <Input
+                      value={newSubject}
+                      onChange={(e) => setNewSubject(e.target.value)}
+                      placeholder="Tambah subjek baharu…"
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={!newSubject.trim() || addSubject.isPending}
+                      onClick={() => {
+                        const value = newSubject.trim();
+                        if (value) addSubject.mutate(value);
+                      }}
+                    >
+                      {addSubject.isPending ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Plus className="mr-2 h-4 w-4" />
+                      )}
+                      Tambah
+                    </Button>
+                  </div>
                 </div>
 
                 <div className="space-y-2">

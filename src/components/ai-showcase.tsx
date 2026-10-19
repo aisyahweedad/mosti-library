@@ -4,20 +4,20 @@ const STEPS = [
   {
     icon: ScanLine,
     n: "01",
-    title: "Imbasan → teks tepat",
-    body: "Setiap muka surat diimbas dan ditranskripsikan — termasuk jadual, benda nota dan tulisan tangan pada helaian pengesahan.",
+    title: "Imbasan dan Pengecaman Teks",
+    body: "Setiap halaman diimbas dan didigitalkan mengikut dokumen asal, termasuk jadual dan catatan.",
   },
   {
     icon: Sparkles,
     n: "02",
-    title: "Ringkasan & pengelasan",
-    body: "Abstrak, kata kunci dan fakulti dijana automatik supaya carian dan penapisan lebih pantas serta tepat.",
+    title: "Ringkasan dan Klasifikasi Dokumen",
+    body: "Abstrak dan kata kunci dijana secara automatik, membolehkan penapisan dan carian dokumen dilaksanakan dengan lebih pantas.",
   },
   {
     icon: MessageCircleQuestion,
     n: "03",
-    title: "Tanya AI dengan dokumen",
-    body: "Soal tentang metodologi atau dapatan, dan AI menjawab berdasarkan teks sebenar tesis — bukannya andaian umum.",
+    title: "Soal Jawab Berasaskan Dokumen",
+    body: "Dapatkan jawapan berpandukan teks asal dokumen bagi sebarang soalan mengenai metodologi atau penemuan kajian.",
   },
 ];
 
@@ -27,11 +27,11 @@ export function AIShowcase() {
       <div className="container py-16">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <h2 className="max-w-lg font-display text-2xl font-bold tracking-tight sm:text-3xl">
-            Bukan sekadar simpanan fail — setiap dokumen difahami.
+            Setiap dokumen disimpan, dibaca dan difahami.
           </h2>
           <p className="max-w-sm text-sm text-muted-foreground">
-            Tiga lapisan AI berjalan pada setiap tesis yang dimuat naik, dari
-            imbasan mentah hingga sedia untuk disoal.
+            Teknologi AI membantu anda mencari, memahami dan bertanya tentang isi
+            setiap dokumen.
           </p>
         </div>
 

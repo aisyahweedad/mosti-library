@@ -240,7 +240,7 @@ export async function extractBookMetadata(
   if (!sample.trim()) return { university: "", degree: "", faculty: "" };
 
   const system =
-    "Anda seorang pustakawan arkib MOSTI. Hanya ekstrak apa yang jelas bertulis pada halaman muka depan dokumen. Jangan meneka atau mencipta maklumat. Jika sesuatu tidak jelas, biarkan kosong.";
+    "Anda seorang pustakawan di Perpustakaan Digital MOSTI. Hanya ekstrak apa yang jelas bertulis pada halaman muka depan dokumen. Jangan meneka atau mencipta maklumat. Jika sesuatu tidak jelas, biarkan kosong.";
 
   const user =
     `Tajuk: ${book.title}\n` +

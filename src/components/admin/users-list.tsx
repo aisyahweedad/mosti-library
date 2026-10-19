@@ -45,7 +45,7 @@ export function UsersList() {
         <CardHeader>
           <CardTitle>Pengguna Berdaftar</CardTitle>
           <CardDescription>
-            Institusi penyumbang dan kakitangan yang diberi akses ke repositori.
+            Sumber penerbitan dan kakitangan yang diberi akses ke repositori.
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">

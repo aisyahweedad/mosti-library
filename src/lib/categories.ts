@@ -402,16 +402,16 @@ export async function classifyBookCategory(
       : "";
 
   const system =
-    "Anda seorang pustakawan arkib sains Kementerian MOSTI. Klasifikasikan tesis kepada SATU kategori sahaja daripada senarai yang diberi. Jawab HANYA dengan nombor kategori.\n\n" +
-    "PENTING: Kategori 'Penyelidikan, Sains & Inovasi' hanya untuk karya yang mengkaji sistem sains itu sendiri (dasar S&T, indikator, pengkomersialan, penerimaan teknologi, bibliometrik). Kategori 'Kejuruteraan & Teknologi' juga jangan dijadikan pilihan lalai — pilih hanya jika tajuk benar-benar karya kejuruteraan. Jika tajuknya adalah kajian saintifik dalam bidang tertentu (cth. kimia, biologi, perubatan, kejuruteraan awam), pilih kategori bidang tersebut.";
+    "Anda seorang pustakawan di Perpustakaan Digital MOSTI. Klasifikasikan terbitan kepada SATU subjek sahaja daripada senarai yang diberi. Jawab HANYA dengan nombor subjek.\n\n" +
+    "PENTING: Subjek 'Penyelidikan, Sains & Inovasi' hanya untuk karya yang mengkaji sistem sains itu sendiri (dasar S&T, indikator, pengkomersialan, penerimaan teknologi, bibliometrik). Subjek 'Kejuruteraan & Teknologi' juga jangan dijadikan pilihan lalai — pilih hanya jika tajuk benar-benar karya kejuruteraan. Jika tajuknya adalah kajian saintifik dalam bidang tertentu (cth. kimia, biologi, perubatan, kejuruteraan awam), pilih subjek bidang tersebut.";
   const user =
     `Tajuk: ${book.title}\n` +
     `Pengarang: ${book.author}\n` +
     `Tahun: ${book.year}\n` +
     (keywords ? `Kata kunci: ${keywords}\n` : "") +
     (front ? `\nTeks dari halaman awal dokumen:\n\n${front}\n\n` : "\n") +
-    `Senarai kategori:\n${categoryHumanList()}\n\n` +
-    "Pilih nombor kategori yang paling sesuai." +
+    `Senarai subjek:\n${categoryHumanList()}\n\n` +
+    "Pilih nombor subjek yang paling sesuai." +
     anchor;
 
   let out = "";

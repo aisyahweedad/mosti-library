@@ -9,7 +9,7 @@ export async function GET(
 ) {
   const thesis = getThesis(params.id);
   if (!thesis) {
-    return NextResponse.json({ error: "Tesis tidak dijumpai" }, { status: 404 });
+    return NextResponse.json({ error: "Dokumen tidak dijumpai" }, { status: 404 });
   }
   return NextResponse.json({
     thesis: toSummary(thesis),

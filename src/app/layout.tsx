@@ -16,11 +16,11 @@ const jakarta = Plus_Jakarta_Sans({
 
 export const metadata: Metadata = {
   title: {
-    default: "Pustaka MOSTI — Perpustakaan Digital MOSTI",
-    template: "%s · Pustaka MOSTI",
+    default: "Perpustakaan Digital MOSTI",
+    template: "%s · Perpustakaan Digital MOSTI",
   },
   description:
-    "Arkib tesis dan disertasi kebangsaan berkuasa AI. Imbas, OCR dan carian teks penuh serta soal-jawab dalam Bahasa Malaysia.",
+    "Terbitan digital kebangsaan berkuasa AI. Imbas, OCR dan carian teks penuh serta soal-jawab dalam Bahasa Malaysia.",
 };
 
 export default function RootLayout({

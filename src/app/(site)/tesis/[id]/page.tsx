@@ -24,7 +24,7 @@ export async function generateMetadata({
   const t = getThesis(params.id);
   if (!t) return { title: "Dokumen tidak dijumpai" };
   return {
-    title: `${t.title} · ARKIB`,
+    title: `${t.title} · Perpustakaan Digital MOSTI`,
     description: t.abstract ? `${t.abstract.slice(0, 160)}…` : `${t.author} (${t.year}).`,
     openGraph: {
       title: t.title,
@@ -97,7 +97,7 @@ export default function ThesisPage({ params }: { params: { id: string } }) {
             <TabsList>
               <TabsTrigger value="ringkasan">Ringkasan AI</TabsTrigger>
               <TabsTrigger value="metadata">Metadata</TabsTrigger>
-              <TabsTrigger value="pratonton">Pratonton</TabsTrigger>
+              <TabsTrigger value="pratonton">Paparan</TabsTrigger>
             </TabsList>
 
             <TabsContent value="ringkasan" className="mt-5">
@@ -146,9 +146,9 @@ export default function ThesisPage({ params }: { params: { id: string } }) {
               <dl className="grid gap-px overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-2">
                 {[
                   ["Nombor panggilan", thesis.call],
-                  ["Fakulti", thesis.faculty],
+                  ["Jenis Koleksi", thesis.faculty],
                   ["Pengarang", thesis.author],
-                  ["Universiti", thesis.university || "—"],
+                  ["Sumber Penerbitan", thesis.university || "—"],
                   ["Tahun", String(thesis.year)],
                   ["Ijazah", thesis.degree || "—"],
                   ["Halaman", `${thesis.pages} (${indexed})`],
@@ -166,7 +166,7 @@ export default function ThesisPage({ params }: { params: { id: string } }) {
               <div className="overflow-hidden rounded-2xl border border-border bg-card">
                 <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
                   <p className="text-sm text-muted-foreground">
-                    Pratonton 10 halaman pertama dokumen.
+                    Paparan 10 halaman pertama dokumen.
                   </p>
                   <a
                     href={`/api/theses/${thesis.id}/preview`}
@@ -179,7 +179,7 @@ export default function ThesisPage({ params }: { params: { id: string } }) {
                 </div>
                 <iframe
                   src={`/api/theses/${thesis.id}/preview`}
-                  title="Pratonton dokumen"
+                  title="Paparan dokumen"
                   className="h-[70vh] w-full bg-muted/40"
                 />
               </div>
@@ -195,7 +195,7 @@ export default function ThesisPage({ params }: { params: { id: string } }) {
       {related.length > 0 && (
         <div className="mt-16">
           <h2 className="font-display text-xl font-bold tracking-tight">
-            Tesis berkaitan
+            Terbitan berkaitan
           </h2>
           <div className="mt-5 grid gap-[18px] sm:grid-cols-2 lg:grid-cols-3">
             {related.map((t) => (

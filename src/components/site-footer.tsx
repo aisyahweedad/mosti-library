@@ -5,16 +5,16 @@ const COLS = [
   {
     title: "Koleksi",
     links: [
-      { href: "/#koleksi", label: "Katalog tesis" },
-      { href: "/query-builder", label: "Query Builder" },
-      { href: "/#ai", label: "Ciri AI" },
+      { href: "/#koleksi", label: "Katalog terbitan" },
+      { href: "/carian", label: "Carian Lanjutan" },
+      { href: "/#ai", label: "Fungsi" },
     ],
   },
   {
     title: "Sumber",
     links: [
       { href: "/#ai", label: "OCR & pemprosesan" },
-      { href: "/#tentang", label: "Metodologi" },
+      { href: "/#soalan-lazim", label: "Soalan Lazim" },
       { href: "/openapi", label: "Dokumentasi API" },
     ],
   },
@@ -31,11 +31,11 @@ export function SiteFooter() {
                 <ScanSearch className="h-[18px] w-[18px]" />
               </span>
               <span className="font-display text-lg font-bold tracking-tight">
-                Pustaka MOSTI
+                Perpustakaan Digital MOSTI
               </span>
             </Link>
             <p className="mt-4 max-w-md text-sm text-muted-foreground">
-              Arkib tesis dan disertasi kebangsaan yang diimbas, diproses OCR dan
+              Terbitan digital kebangsaan yang diimbas, diproses OCR dan
               difahami oleh AI — boleh dicari sehingga ke perenggan dan disoal
               terus dalam Bahasa Malaysia.
             </p>
@@ -75,7 +75,7 @@ export function SiteFooter() {
           </div>
         </div>
         <div className="mt-12 flex flex-col gap-2 border-t border-border/70 pt-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-          <p>© 2025 Pustaka MOSTI — prototype antaramuka. Data tesis adalah rekaan untuk tunjuk cara.</p>
+          <p>© 2025 Perpustakaan Digital MOSTI — prototaip antaramuka. Data terbitan adalah rekaan untuk tunjuk cara.</p>
           <p className="font-mono">v0.2 · dibina dengan shadcn/ui</p>
         </div>
       </div>

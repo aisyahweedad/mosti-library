@@ -21,21 +21,20 @@ export function Hero() {
         <div>
           <Badge variant="secondary" className="px-3 py-1">
             <Sparkles className="h-3.5 w-3.5 text-primary" />
-            Pustaka digital berkuasa AI
+            Perpustakaan Digital Pintar
           </Badge>
 
           <h1 className="mt-6 font-display text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl lg:text-[3.4rem]">
-            Setiap muka surat tesis,{" "}
+            Carian maklumat menerusi{" "}
             <span className="bg-gradient-to-r from-primary via-sky-600 to-emerald-600 bg-clip-text text-transparent">
-              dibaca dan difahami
-            </span>{" "}
-            oleh AI.
+              setiap halaman dokumen
+            </span>
+            .
           </h1>
 
           <p className="mt-5 max-w-xl text-lg leading-relaxed text-muted-foreground">
-            Tesis dan disertasi dari universiti di seluruh negara — diimbas,
-            diproses OCR, boleh dicari sehingga ke perenggan, dan boleh disoal
-            terus dalam Bahasa Malaysia.
+            Himpunan dokumen dan bahan penyelidikan digital menerusi keupayaan
+            AI, dilengkapi fungsi carian dan soal jawab dalam Bahasa Melayu.
           </p>
 
           <div className="mt-8 max-w-xl">

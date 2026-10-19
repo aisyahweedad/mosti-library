@@ -142,12 +142,12 @@ async function generateSummary(book: Book, pages: string[]): Promise<{ summary: 
       ? {
           role: "system",
           content:
-            "You are a research librarian at the ARKIB MOSTI archive. Summaries and keywords must be written in MALAY (Bahasa Melayu) regardless of the source language.",
+            "You are a research librarian at the Perpustakaan Digital MOSTI. Summaries and keywords must be written in MALAY (Bahasa Melayu) regardless of the source language.",
         }
       : {
           role: "system",
           content:
-            "Anda seorang pustakawan di arkib ARKIB MOSTI. Jawab dalam Bahasa Melayu walaupun dokumen sumber dalam bahasa lain.",
+            "Anda seorang pustakawan di Perpustakaan Digital MOSTI. Jawab dalam Bahasa Melayu walaupun dokumen sumber dalam bahasa lain.",
         };
 
   const user: ChatMessage = {
@@ -156,7 +156,7 @@ async function generateSummary(book: Book, pages: string[]): Promise<{ summary: 
       `Tajuk: ${book.title}\n` +
       `Pengarang: ${book.author}\n` +
       `Tahun: ${book.year}\n` +
-      `Kategori: ${book.category}\n\n` +
+      `Subjek: ${book.category}\n\n` +
       `Terjemahan awal kandungan dokumen (permulaan teks):\n\n${sample}\n\n` +
       "Berdasarkan kandungan di atas, hasilkan:\n" +
       "1. RINGKASAN — ringkasan padat dalam Bahasa Melayu, 3-5 ayat ringkas yang merangkumi tujuan, kaedah, dan dapatan utama kajian.\n" +

@@ -84,12 +84,15 @@ export async function POST(req: NextRequest) {
           {
             role: "system",
             content:
-              `Anda adalah pembantu penyelidikan untuk dokumen arkib "${book.title}" ` +
+              `Anda adalah pembantu penyelidikan untuk dokumen "${book.title}" ` +
               `oleh ${book.author} (${book.year}), nombor panggilan ${book.call}. ` +
               "Balas dalam Bahasa Melayu. Jawab hanya berdasarkan KONTEKS yang diberikan; " +
               "sebut nombor halaman seperti (hlm. 12) apabila merujuk kepadanya. " +
               "Jika maklumat itu tiada dalam KONTEKS, nyatakan \"Maklumat ini tidak terdapat dalam dokumen.\" " +
-              "Jangan mencipta fakta atau meneka.",
+              "Jangan mencipta fakta atau meneka. " +
+              "Gaya jawapan mesti ringkas dan terus kepada poin utama; elakkan ayat pembuka " +
+              "yang tidak perlu atau mengulang soalan. Gunakan perenggan pendek atau senarai " +
+              "berbulet jika sesuai, dan jangan gunakan simbol tajuk Markdown seperti '#' atau '##'.",
           },
           hits.length > 0
             ? {

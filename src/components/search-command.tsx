@@ -42,7 +42,7 @@ export function SearchCommand() {
       >
         <Search className="h-5 w-5 shrink-0 text-muted-foreground" />
         <span className="flex-1 text-muted-foreground">
-          Taip tajuk, pengarang atau kata kunci…
+          Taip tajuk, pengarang atau kandungan dokumen…
         </span>
         <kbd className="pointer-events-none hidden select-none items-center gap-1 rounded border bg-muted px-2 py-0.5 font-mono text-xs text-muted-foreground sm:flex">
           ⌘ K
@@ -99,7 +99,7 @@ function SearchDialog({
       <CommandInput
         value={value}
         onValueChange={setValue}
-        placeholder="Cari tajuk, pengarang atau kata kunci…"
+        placeholder="Cari tajuk, pengarang atau kandungan dokumen…"
         autoFocus
       />
 

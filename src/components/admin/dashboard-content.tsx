@@ -106,7 +106,7 @@ export function DashboardContent() {
       icon: BookOpen,
     },
     {
-      label: "Tesis Diterbit",
+      label: "Terbitan Diterbit",
       value: stats.theses,
       icon: FileText,
     },
@@ -120,7 +120,7 @@ export function DashboardContent() {
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <p className="text-sm text-muted-foreground">
-        Gambaran keseluruhan kandungan dan kualiti repositori ARKIB.
+        Gambaran keseluruhan kandungan dan kualiti repositori Perpustakaan Digital MOSTI.
       </p>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

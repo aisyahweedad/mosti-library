@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Menu, ScanSearch } from "lucide-react";
+import Image from "next/image";
+import { Menu } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -16,8 +17,10 @@ import {
 
 const NAV = [
   { href: "/#koleksi", label: "Koleksi" },
-  { href: "/#ai", label: "Ciri AI" },
-  { href: "/#tentang", label: "Tentang" },
+  { href: "/carian", label: "Carian Lanjutan" },
+  { href: "/#ai", label: "Fungsi" },
+  { href: "/#soalan-lazim", label: "Soalan Lazim" },
+  { href: "/#tentang", label: "Hubungi Kami" },
 ];
 
 export function SiteHeader() {
@@ -25,15 +28,20 @@ export function SiteHeader() {
     <header className="sticky top-0 z-40 w-full border-b border-border/70 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/75">
       <div className="container flex h-16 items-center justify-between gap-4">
         <Link href="/" className="flex items-center gap-3">
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-sky-600 text-primary-foreground shadow-sm">
-            <ScanSearch className="h-[18px] w-[18px]" />
-          </span>
+          <Image
+            src="/logomosti.png"
+            alt="Logo MOSTI"
+            width={300}
+            height={250}
+            priority
+            className="h-10 w-auto"
+          />
           <span className="flex flex-col leading-none">
             <span className="font-display text-lg font-bold tracking-tight text-foreground">
-              Pustaka MOSTI
+              Perpustakaan Digital MOSTI
             </span>
             <span className="text-xs text-muted-foreground">
-              Perpustakaan Digital MOSTI
+              Terbitan Digital Sains &amp; Teknologi
             </span>
           </span>
         </Link>
