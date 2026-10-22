@@ -63,6 +63,16 @@ export function SearchCommand() {
   );
 }
 
+type ContentResult = {
+  query: string;
+  total: number;
+  results: Array<{
+    thesis: ThesisSummary;
+    score: number;
+    snippets: Array<{ page: number | null; text: string; score: number }>;
+  }>;
+};
+
 function SearchDialog({
   open,
   setOpen,
@@ -76,14 +86,14 @@ function SearchDialog({
   setValue: (v: string) => void;
   onSelect: (id: string) => void;
 }) {
-  const query = useDebounced(value.trim(), 250);
+  const query = useDebounced(value.trim(), 350);
   const enabled = query.length >= 1;
 
   const { data, isFetching } = useQuery({
-    queryKey: ["instant-search", query, enabled],
+    queryKey: ["instant-meta", query, enabled],
     queryFn: async () => {
       const res = await fetch(
-        `/api/theses?query=${encodeURIComponent(query)}&pageSize=8`
+        `/api/theses?query=${encodeURIComponent(query)}&pageSize=6`
       );
       if (!res.ok) throw new Error("Carian gagal");
       return (await res.json()) as { items: ThesisSummary[]; total: number };
@@ -92,7 +102,31 @@ function SearchDialog({
     placeholderData: (prev) => prev,
   });
 
-  const results = data?.items ?? [];
+  // full-page content search (every document page is indexed)
+  const { data: content, isFetching: contentFetching } = useQuery({
+    queryKey: ["instant-content", query, enabled],
+    queryFn: async () => {
+      const res = await fetch(
+        `/api/search/advanced?query=${encodeURIComponent(query)}`
+      );
+      if (!res.ok) throw new Error("Carian gagal");
+      return (await res.json()) as ContentResult;
+    },
+    enabled,
+    placeholderData: (prev) => prev,
+  });
+
+  const metaResults = data?.items ?? [];
+  const metaIds = new Set(metaResults.map((t) => t.id));
+  const contentResults = (content?.results ?? [])
+    .filter((r) => !metaIds.has(r.thesis.id))
+    .slice(0, 6);
+  const empty =
+    enabled &&
+    !isFetching &&
+    !contentFetching &&
+    metaResults.length === 0 &&
+    contentResults.length === 0;
 
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
@@ -104,7 +138,7 @@ function SearchDialog({
       />
 
       <CommandList>
-        {enabled && isFetching && !results.length && (
+        {enabled && (isFetching || contentFetching) && (
           <div className="flex flex-col gap-2 p-3">
             {[0, 1, 2].map((i) => (
               <Skeleton key={i} className="h-14 w-full rounded-md" />
@@ -112,12 +146,19 @@ function SearchDialog({
           </div>
         )}
 
-        <CommandEmpty>Tiada hasil untuk “{value}”.</CommandEmpty>
+        {!enabled && (
+          <div className="p-3 text-sm text-muted-foreground">
+            Taip untuk mencari melalui metadata dan kandungan penuh setiap
+            dokumen.
+          </div>
+        )}
 
-        {results.length > 0 && (
-          <CommandGroup heading={`${data?.total ?? 0} keputusan`}>
-            {results.map((t) => (
-              <CommandItem key={t.id} onSelect={() => onSelect(t.id)}>
+        {empty && <CommandEmpty>Tiada hasil untuk “{value}”.</CommandEmpty>}
+
+        {metaResults.length > 0 && (
+          <CommandGroup heading={`Tajuk & pengarang · ${data?.total ?? 0} keputusan`}>
+            {metaResults.map((t) => (
+              <CommandItem key={`meta-${t.id}`} onSelect={() => onSelect(t.id)}>
                 <FileSearch className="mr-2 h-4 w-4 shrink-0 text-muted-foreground" />
                 <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <span className="truncate text-sm">{t.title}</span>
@@ -130,6 +171,32 @@ function SearchDialog({
                 </Badge>
               </CommandItem>
             ))}
+          </CommandGroup>
+        )}
+
+        {contentResults.length > 0 && (
+          <CommandGroup heading="Padanan dalam kandungan dokumen">
+            {contentResults.map((r) => {
+              const snippet = r.snippets[0];
+              return (
+                <CommandItem
+                  key={`content-${r.thesis.id}`}
+                  onSelect={() => onSelect(r.thesis.id)}
+                >
+                  <FileSearch className="mr-2 h-4 w-4 shrink-0 text-emerald-600" />
+                  <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <span className="truncate text-sm">{r.thesis.title}</span>
+                    <span className="truncate text-xs text-muted-foreground">
+                      {snippet?.page ? `Halaman ${snippet.page} · ` : ""}
+                      {snippet?.text}
+                    </span>
+                  </div>
+                  <Badge variant="outline" className="ml-2 shrink-0">
+                    {r.thesis.faculty}
+                  </Badge>
+                </CommandItem>
+              );
+            })}
           </CommandGroup>
         )}
       </CommandList>

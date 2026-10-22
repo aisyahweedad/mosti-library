@@ -1,4 +1,4 @@
-import { embedTexts } from "@/lib/ai";
+import { embedQuery } from "@/lib/ai";
 import { listBooks } from "@/lib/books-data";
 import { getDb } from "@/lib/db";
 import { bookToSummary } from "@/lib/mappers";
@@ -25,6 +25,30 @@ export type AdvancedSearchResponse = {
 
 const MAX_SNIPPETS = 3;
 const SNIPPET_CHARS = 320;
+
+/**
+ * OCR noise guard: indexes contain many tiny fragments torn from table cells,
+ * page numbers, code listings and headlines ("= True Then", "201", "o,00").
+ * These fragments embed close to almost any query and pollute the top list.
+ */
+function looksLikeNoise(text: string): boolean {
+  const clean = text.replace(/\s+/g, " ").trim();
+  if (clean.length < 24) return true;
+
+  const stripped = clean.replace(/[^A-Za-zÀ-ž]/g, "");
+  if (stripped.length < 12) return true;
+
+  // chunks dominated by digits/punctuation (table data, references tail, code)
+  const tokens = clean
+    .split(/\s+/)
+    .map((w) => w.replace(/^[^A-Za-zÀ-ž0-9]+|[^A-Za-zÀ-ž0-9]+$/g, ""))
+    .filter((w) => /[\dA-Za-zÀ-ž]/.test(w) && w.length >= 3);
+  if (tokens.length >= 4) {
+    const wordLike = tokens.filter((w) => /[A-Za-zÀ-ž]{3,}/.test(w)).length;
+    if (wordLike / tokens.length < 0.5) return true;
+  }
+  return false;
+}
 
 function clip(text: string, max = SNIPPET_CHARS) {
   const clean = text.replace(/\s+/g, " ").trim();
@@ -73,14 +97,20 @@ export async function advancedSearch(
   }> = [];
 
   try {
-    const [embedding] = await embedTexts([query]);
-    if (embedding) hits = searchChunksGlobal(embedding, 120);
+    const embedding = await embedQuery(query);
+    if (embedding) hits = searchChunksGlobal(embedding, 200);
   } catch (err) {
     console.error("[advanced] carian semantik gagal, guna padanan kata kunci:", err);
   }
 
-  if (hits.length === 0) {
-    hits = keywordHits(query).map((h) => ({ ...h, score: 0.5 }));
+  // drop OCR noise fragments; fall back to lexical scan when nothing survives
+  const usable = hits.filter((h) => !looksLikeNoise(h.text));
+  if (usable.length > 0) {
+    hits = usable;
+  } else {
+    hits = keywordHits(query)
+      .filter((h) => !looksLikeNoise(h.text))
+      .map((h) => ({ ...h, score: 0.5 }));
   }
 
   const grouped = new Map<string, AdvancedResult>();
@@ -110,4 +140,22 @@ export async function advancedSearch(
     .slice(0, limit);
 
   return { query, total: results.length, results };
+}
+
+// small in-process cache: the KNN scan over 150k+ document pages is expensive
+const CACHE_TTL_MS = 5 * 60 * 1000;
+const responseCache = new Map<string, { at: number; data: AdvancedSearchResponse }>();
+
+export async function cachedAdvancedSearch(query: string): Promise<AdvancedSearchResponse> {
+  const key = query.trim().toLowerCase();
+  if (!key) return { query: key, total: 0, results: [] };
+  const cached = responseCache.get(key);
+  if (cached && Date.now() - cached.at < CACHE_TTL_MS) return cached.data;
+  const data = await advancedSearch(query);
+  responseCache.set(key, { at: Date.now(), data });
+  if (responseCache.size > 100) {
+    const oldest = responseCache.keys().next().value;
+    if (oldest) responseCache.delete(oldest);
+  }
+  return data;
 }

@@ -26,7 +26,7 @@ const ITEMS = [
   },
   {
     key: "faculties" as const,
-    label: "Jenis Koleksi",
+    label: "Jenis Subjek",
     icon: Layers,
   },
   {

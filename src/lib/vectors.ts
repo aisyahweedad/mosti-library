@@ -315,6 +315,48 @@ export function searchChunks(
     .slice(0, topK);
 }
 
+/** Lexical fallback used when no embedding model is configured. */
+export function keywordSearchChunks(
+  bookId: string,
+  query: string,
+  topK = 6
+): ChunkHit[] {
+  const terms = Array.from(
+    new Set(
+      query
+        .toLowerCase()
+        .replace(/[^\p{L}\p{N}]+/gu, " ")
+        .split(/\s+/)
+        .filter((t) => t.length >= 3)
+    )
+  ).slice(0, 10);
+  if (terms.length === 0) return [];
+
+  const db = getDb();
+  const clauses = terms.map(() => "lower(text) LIKE ?").join(" OR ");
+  const rows = db
+    .prepare(
+      `SELECT text, page FROM chunks
+       WHERE book_id = ? AND (${clauses})
+       LIMIT 400`
+    )
+    .all(bookId, ...terms.map((t) => `%${t}%`)) as Array<{
+    text: string;
+    page: number | null;
+  }>;
+
+  const scored = rows.map((row) => {
+    const lower = row.text.toLowerCase();
+    const matches = terms.filter((t) => lower.includes(t)).length;
+    return {
+      text: row.text,
+      page: row.page,
+      score: matches / terms.length,
+    };
+  });
+  return scored.sort((a, b) => b.score - a.score).slice(0, topK);
+}
+
 export type GlobalChunkHit = {
   bookId: string;
   text: string;

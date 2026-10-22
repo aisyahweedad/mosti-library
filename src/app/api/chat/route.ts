@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { streamChatCompletion, embedTexts, llmConfigured, type ChatMessage } from "@/lib/ai";
+import {
+  streamChatCompletion,
+  embedQuery,
+  embeddingsConfigured,
+  llmConfigured,
+  type ChatMessage,
+} from "@/lib/ai";
 import { getBook } from "@/lib/books-data";
-import { searchChunks } from "@/lib/vectors";
+import { keywordSearchChunks, searchChunks, type ChunkHit } from "@/lib/vectors";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -77,8 +83,14 @@ export async function POST(req: NextRequest) {
           return;
         }
 
-        const [queryEmbedding] = await embedTexts([lastUser.content]);
-        const hits = searchChunks(book.id, queryEmbedding, 6);
+        let hits: ChunkHit[] = [];
+        if (embeddingsConfigured()) {
+          const queryEmbedding = await embedQuery(lastUser.content);
+          if (queryEmbedding) hits = searchChunks(book.id, queryEmbedding, 6);
+        }
+        if (hits.length === 0) {
+          hits = keywordSearchChunks(book.id, lastUser.content, 6);
+        }
 
         const modelMessages: ChatMessage[] = [
           {

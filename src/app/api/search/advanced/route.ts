@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { advancedSearch } from "@/lib/advanced-search";
+import { cachedAdvancedSearch } from "@/lib/advanced-search";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
       { headers: { "Cache-Control": "no-store" } }
     );
   }
-  const data = await advancedSearch(query);
+  const data = await cachedAdvancedSearch(query);
   return NextResponse.json(data, {
     headers: { "Cache-Control": "no-store" },
   });

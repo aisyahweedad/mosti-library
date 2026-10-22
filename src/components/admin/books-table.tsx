@@ -43,6 +43,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { withBasePath } from "@/lib/base-path";
 import { BOOK_STATUSES, type Book, type BookStatus } from "@/lib/book-types";
 import { cn } from "@/lib/utils";
 
@@ -104,7 +105,7 @@ function RowActions({
       <DropdownMenuContent align="end">
         {book.objectKey && (
           <DropdownMenuItem asChild>
-            <a href={`/api/admin/books/${book.id}/file`} target="_blank" rel="noreferrer">
+            <a href={withBasePath(`/api/admin/books/${book.id}/file`)} target="_blank" rel="noreferrer">
               <Download className="mr-2 h-4 w-4" />
               Muat turun PDF
             </a>

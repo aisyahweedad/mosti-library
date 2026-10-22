@@ -12,6 +12,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import { withBasePath } from "@/lib/base-path";
 import { getRelatedTheses, getThesis } from "@/lib/search";
 
 export const dynamic = "force-dynamic";
@@ -146,7 +147,7 @@ export default function ThesisPage({ params }: { params: { id: string } }) {
               <dl className="grid gap-px overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-2">
                 {[
                   ["Nombor panggilan", thesis.call],
-                  ["Jenis Koleksi", thesis.faculty],
+                  ["Jenis Subjek", thesis.faculty],
                   ["Pengarang", thesis.author],
                   ["Sumber Penerbitan", thesis.university || "—"],
                   ["Tahun", String(thesis.year)],
@@ -169,7 +170,7 @@ export default function ThesisPage({ params }: { params: { id: string } }) {
                     Paparan 10 halaman pertama dokumen.
                   </p>
                   <a
-                    href={`/api/theses/${thesis.id}/preview`}
+                    href={withBasePath(`/api/theses/${thesis.id}/preview`)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-sm font-medium text-primary hover:underline"
@@ -178,7 +179,7 @@ export default function ThesisPage({ params }: { params: { id: string } }) {
                   </a>
                 </div>
                 <iframe
-                  src={`/api/theses/${thesis.id}/preview`}
+                  src={withBasePath(`/api/theses/${thesis.id}/preview`)}
                   title="Paparan dokumen"
                   className="h-[70vh] w-full bg-muted/40"
                 />

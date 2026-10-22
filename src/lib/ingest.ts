@@ -1,4 +1,10 @@
-import { embedTexts, chatCompletion, llmConfigured, type ChatMessage } from "@/lib/ai";
+import {
+  embedTexts,
+  chatCompletion,
+  embeddingsConfigured,
+  llmConfigured,
+  type ChatMessage,
+} from "@/lib/ai";
 import { getBook, markBookFailed, markBookReady, updateBookProcessing, updateBookCategory } from "@/lib/books-data";
 import type { Book } from "@/lib/book-types";
 import { LEGACY_CATEGORIES, classifyBookCategory } from "@/lib/categories";
@@ -214,12 +220,16 @@ export async function ingestBook(bookId: string): Promise<void> {
     if (chunks.length === 0) throw new Error("Tiada teks bermakna selepas chunking.");
 
     const embeddings: number[][] = [];
-    for (let i = 0; i < chunks.length; i += EMBED_BATCH) {
-      const batch = chunks.slice(i, i + EMBED_BATCH);
-      const embs = await embedTexts(batch.map((c) => `[hlm. ${c.page}]\n${c.text}`));
-      embeddings.push(...embs);
-      const progress = 10 + Math.round(((i + EMBED_BATCH) / chunks.length) * 74);
-      updateBookProcessing(bookId, "Sedang Diproses", Math.min(84, progress));
+    if (embeddingsConfigured()) {
+      for (let i = 0; i < chunks.length; i += EMBED_BATCH) {
+        const batch = chunks.slice(i, i + EMBED_BATCH);
+        const embs = await embedTexts(batch.map((c) => `[hlm. ${c.page}]\n${c.text}`));
+        embeddings.push(...embs);
+        const progress = 10 + Math.round(((i + EMBED_BATCH) / chunks.length) * 74);
+        updateBookProcessing(bookId, "Sedang Diproses", Math.min(84, progress));
+      }
+    } else {
+      updateBookProcessing(bookId, "Sedang Diproses", 84);
     }
 
     const dim = embeddings[0]?.length ?? 0;

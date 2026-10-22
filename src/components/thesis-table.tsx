@@ -61,7 +61,7 @@ const columns = (query: string): ColumnDef<ThesisSummary>[] => [
   },
   {
     accessorKey: "faculty",
-    header: "Jenis Koleksi",
+    header: "Jenis Subjek",
     cell: ({ row }) => (
       <span className="text-sm text-muted-foreground">{row.original.faculty}</span>
     ),

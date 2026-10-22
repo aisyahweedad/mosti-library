@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { chatCompletion, embedTexts, llmConfigured } from "@/lib/ai";
+import { chatCompletion, embedQuery, llmConfigured } from "@/lib/ai";
 import { getBook } from "@/lib/books-data";
-import { searchChunks } from "@/lib/vectors";
+import { keywordSearchChunks, searchChunks } from "@/lib/vectors";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
 
   let embedding: number[] | undefined;
   try {
-    [embedding] = await embedTexts([query]);
+    embedding = await embedQuery(query);
   } catch (err) {
     console.error("[compare] gagal menjana embedding:", err);
   }
@@ -51,17 +51,18 @@ export async function POST(req: NextRequest) {
     if (!book) continue;
 
     let excerpt = "";
-    if (embedding) {
-      try {
-        excerpt = searchChunks(book.id, embedding, 4)
-          .map(
-            (h) =>
-              `[hlm. ${h.page ?? "?"}] ${h.text.replace(/\s+/g, " ").trim()}`
-          )
-          .join("\n");
-      } catch {
-        excerpt = "";
-      }
+    try {
+      const hits = embedding
+        ? searchChunks(book.id, embedding, 4)
+        : keywordSearchChunks(book.id, query, 4);
+      excerpt = hits
+        .map(
+          (h) =>
+            `[hlm. ${h.page ?? "?"}] ${h.text.replace(/\s+/g, " ").trim()}`
+        )
+        .join("\n");
+    } catch {
+      excerpt = "";
     }
 
     sections.push(

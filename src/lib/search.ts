@@ -16,7 +16,7 @@ import { countIndexedPages } from "@/lib/vectors";
 
 export type ThesisQuery = {
   query?: string;
-  faculty?: string;
+  faculty?: string | string[];
   page?: number;
   pageSize?: number;
 };
@@ -106,15 +106,20 @@ export function searchTheses({
 }: ThesisQuery = {}): SearchResult<ThesisSummary> {
   const query = rawQuery?.trim() ?? "";
 
+  const selected =
+    faculty === undefined || faculty === "Semua"
+      ? []
+      : (Array.isArray(faculty) ? faculty : [faculty])
+          .map((f) => f.trim())
+          .filter((f) => f.length > 0 && f !== "Semua");
+
   const ranked = publicBooks()
     .map((t) => {
       const score = scoreThesis(t, query);
       return { t, score };
     })
     .filter(({ score }) => score > 0)
-    .filter(
-      ({ t }) => faculty === undefined || faculty === "Semua" || t.category === faculty
-    )
+    .filter(({ t }) => selected.length === 0 || selected.includes(t.category))
     .sort(
       (a, b) => b.score - a.score || b.t.year - a.t.year || a.t.title.localeCompare(b.t.title)
     )
